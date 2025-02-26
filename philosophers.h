@@ -5,6 +5,7 @@
 # include <unistd.h>
 # include <stdio.h>
 # include <stdlib.h>
+# include <sys/time.h>
 
 
 typedef struct s_philosophers
@@ -16,14 +17,17 @@ typedef struct s_philosophers
 	int time_to_sleep;
 	int number_times_to_eat;
 	int number_of_philosopher;
-	pthread_mutex_t *lift_fork;
+	int last_meal;
+	int meal_count;
+	pthread_mutex_t *left_fork;
 	pthread_mutex_t *right_fork;
-	pthread_mutex_t *eat_lock;
-	pthread_mutex_t *dead_lock;
+	pthread_mutex_t *meal_lock;
+	pthread_mutex_t *dead_flag_lock;
 }t_philosophers;
 
 typedef struct s_program
 {
+	int dead_flag;
 	t_philosophers *philosophers;
 	pthread_t monitor;
 }t_program;
