@@ -1,7 +1,7 @@
-CC = cc -g -O0
+CC = cc -g -O3
 NAME = philosophers
 FLAGS = -Wall -Wextra -Werror
-SRC = philosophers_utils.c philosophers.c
+SRC = philosophers.c
 OBJS=$(SRC:%.c=%.o)
 HEADER = philosophers.h
 
