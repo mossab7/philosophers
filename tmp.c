@@ -47,6 +47,8 @@ bool	simulation_end(t_program *program)
 {
 	bool	result;
 
+	if (program->dead_flag || program->all_ate_enough)
+		return (true);
 	pthread_mutex_lock(&program->dead_flag_lock);
 	result = program->dead_flag || program->all_ate_enough;
 	pthread_mutex_unlock(&program->dead_flag_lock);
@@ -55,10 +57,15 @@ bool	simulation_end(t_program *program)
 
 void	take_fork(t_philosophers *philosopher)
 {
-	if (philosopher->id % 2 == 0)
+	if (philosopher->id & 1)
 	{
 		pthread_mutex_lock(philosopher->right_fork);
 		print_status(philosopher, "has taken a fork");
+		if(simulation_end(philosopher->program))
+		{
+			pthread_mutex_unlock(philosopher->right_fork);
+			return;
+		}
 		pthread_mutex_lock(philosopher->left_fork);
 		print_status(philosopher, "has taken a fork");
 	}
@@ -66,6 +73,11 @@ void	take_fork(t_philosophers *philosopher)
 	{
 		pthread_mutex_lock(philosopher->left_fork);
 		print_status(philosopher, "has taken a fork");
+		if(simulation_end(philosopher->program))
+		{
+			pthread_mutex_unlock(philosopher->left_fork);
+			return;
+		}
 		pthread_mutex_lock(philosopher->right_fork);
 		print_status(philosopher, "has taken a fork");
 	}
@@ -76,6 +88,7 @@ void	release_fork(t_philosophers *philosopher)
 	pthread_mutex_unlock(philosopher->left_fork);
 	pthread_mutex_unlock(philosopher->right_fork);
 }
+
 
 void	*philo_routine(void *arg)
 {
@@ -88,8 +101,7 @@ void	*philo_routine(void *arg)
 		ft_sleep(philosopher->time_to_die);
 		return (NULL);
 	}
-	if (philosopher->id % 2 == 0)
-		ft_sleep(50);
+	ft_sleep(5 * (philosopher->id % 4));
 	while (!simulation_end(philosopher->program))
 	{
 		take_fork(philosopher);
@@ -105,14 +117,12 @@ void	*philo_routine(void *arg)
 		print_status(philosopher, "is sleeping");
 		ft_sleep(philosopher->time_to_sleep);
 		print_status(philosopher, "is thinking");
-		if(philosopher->time_to_eat > philosopher->time_to_sleep)
-			ft_sleep(philosopher->time_to_eat - philosopher->time_to_sleep);
-		long time_till_death = get_time() - philosopher->last_meal;
-		if (time_till_death < philosopher->time_to_die * 0.7)
-			ft_sleep(1);
+		if (!(philosopher->id & 1))
+			ft_sleep(philosopher->last_meal - philosopher->time_to_die);
 	}
 	return (NULL);
 }
+
 
 void	*monitor_routine(void *arg)
 {
@@ -120,8 +130,24 @@ void	*monitor_routine(void *arg)
 	int			i;
 	bool		all_ate;
 	size_t		current_time;
+	int 		closest_to_death;
 
 	program = (t_program *)arg;
+	closest_to_death = program->philosophers[0].time_to_die;
+	i = 0;
+	while(i < program->philosopher_count)
+	{
+		int time_elapsed = current_time - program->philosophers[i].last_meal;
+		int time_remaining = program->philosophers[i].time_to_die - time_elapsed;
+		if (time_remaining < closest_to_death)
+			closest_to_death = time_remaining;
+		i++;
+	}
+	if(closest_to_death < 10)
+		usleep(500);
+	else
+		usleep(1000);
+
 	while (!simulation_end(program))
 	{
 		i = 0;
@@ -130,17 +156,20 @@ void	*monitor_routine(void *arg)
 		{
 			pthread_mutex_lock(&program->meal_lock);
 			current_time = get_time();
-			if (current_time
-				- program->philosophers[i].last_meal > (size_t)program->philosophers[i].time_to_die)
+			if (current_time - program->philosophers[i].last_meal > (size_t)program->philosophers[i].time_to_die)
 			{
-				pthread_mutex_unlock(&program->meal_lock);
 				pthread_mutex_lock(&program->dead_flag_lock);
-				program->dead_flag = 1;
+				if (!program->dead_flag)
+				{
+					program->dead_flag = 1;
+					pthread_mutex_unlock(&program->dead_flag_lock);
+					pthread_mutex_unlock(&program->meal_lock);
+					printf("%zu %d died\n", current_time, program->philosophers[i].id + 1);
+					return (NULL);
+				}
 				pthread_mutex_unlock(&program->dead_flag_lock);
-				printf("%zu %d died\n", current_time,
-					program->philosophers[i].id + 1);
-				return (NULL);
 			}
+			pthread_mutex_unlock(&program->meal_lock);
 			if (program->philosophers[i].number_times_to_eat != -1
 				&& program->philosophers[i].meal_count < program->philosophers[i].number_times_to_eat)
 			{
@@ -176,7 +205,7 @@ bool	check_arguments(int ac, char **av)
 	{
 		printf("Usage:\
 			%s number_of_philosophers time_to_die time_to_eat time_to_sleep [number_of_times_each_philosopher_must_eat]\n",
-			av[0]);
+				av[0]);
 		return (false);
 	}
 	i = 1;
@@ -191,11 +220,6 @@ bool	check_arguments(int ac, char **av)
 				return (false);
 			}
 			j++;
-		}
-		if (atoi(av[i]) <= 0)
-		{
-			printf("Error: Arguments must be positive integers.\n");
-			return (false);
 		}
 		i++;
 	}
@@ -270,26 +294,22 @@ void	free_resources(t_program *program)
 
 int	main(int ac, char **av)
 {
-	t_program *program;
-	pthread_t monitor;
-	int i;
+	t_program	*program;
+	pthread_t	monitor;
+	int			i;
 
 	if (!check_arguments(ac, av))
 		return (EXIT_FAILURE);
-
 	program = malloc(sizeof(t_program));
 	if (!program)
 		error_exit("malloc failed");
-
 	program->philosophers = malloc(atoi(av[1]) * sizeof(t_philosophers));
 	if (!program->philosophers)
 	{
 		free(program);
 		error_exit("malloc failed");
 	}
-
 	program_init(ac, av, program);
-
 	i = 0;
 	while (i < program->philosopher_count)
 	{
@@ -298,19 +318,15 @@ int	main(int ac, char **av)
 			error_exit("pthread_create failed");
 		i++;
 	}
-
 	if (pthread_create(&monitor, NULL, monitor_routine, program) != 0)
 		error_exit("pthread_create failed");
-
 	pthread_join(monitor, NULL);
-
 	i = 0;
 	while (i < program->philosopher_count)
 	{
 		pthread_join(program->philosophers[i].thread, NULL);
 		i++;
 	}
-
 	free_resources(program);
 	return (EXIT_SUCCESS);
 }
