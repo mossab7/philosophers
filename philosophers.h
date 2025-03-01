@@ -45,7 +45,7 @@ void					release_fork(t_philosophers *philosopher);
 void					print_status(t_philosophers *philosopher, char *status);
 void					*philo_routine(void *arg);
 void					*monitor_routine(void *arg);
-void					ft_sleep(int milliseconds);
+void					ft_sleep(size_t milliseconds);
 void					program_init(int ac, char **args, t_program *program);
 void					destroy_mutexes(t_program *program);
 void					free_resources(t_program *program);

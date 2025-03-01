@@ -13,7 +13,7 @@ size_t	get_time(void)
 	return (curtime.tv_sec * 1000 + curtime.tv_usec / 1000);
 }
 
-void	ft_sleep(int milliseconds)
+void	ft_sleep(size_t milliseconds)
 {
 	size_t	start;
 	size_t	current;
@@ -22,7 +22,7 @@ void	ft_sleep(int milliseconds)
 	while (1)
 	{
 		current = get_time();
-		if (current - start >= (size_t)milliseconds)
+		if (current - start >= milliseconds)
 			break ;
 		usleep(100);
 	}
