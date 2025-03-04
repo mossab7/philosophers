@@ -7,6 +7,7 @@
 # include <stdlib.h>
 # include <sys/time.h>
 # include <unistd.h>
+#include <semaphore.h>
 
 typedef struct s_philosophers
 {
@@ -20,13 +21,18 @@ typedef struct s_philosophers
 	int					number_times_to_eat;
 	int					*dead_flag;
 	int					number_of_philosopher;
+	sem_t				*left_fork;
+	sem_t				*right_fork;
+	sem_t				meal_lock;
 	struct s_program	*program;
 }						t_philosophers;
 
 typedef struct s_program
 {
 	t_philosophers		*philosophers;
-	int					dead_flag;
+	sem_t				dead_flag;
+	sem_t				*forks;
+	sem_t				print;
 	int					philosopher_count;
 	bool				all_ate_enough;
 }						t_program;
