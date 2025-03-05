@@ -1,6 +1,6 @@
 CC = cc -g -O3
 NAME = philosophers
-FLAGS = -fsanitize=thread -Wall -Wextra -Werror
+FLAGS =  -Wall -Wextra -Werror
 SRC = philosophers.c
 OBJS=$(SRC:%.c=%.o)
 HEADER = philosophers.h
