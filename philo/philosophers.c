@@ -12,43 +12,6 @@
 
 #include "philosophers.h"
 
-void	error_exit(char *message)
-{
-	fprintf(stderr, "Error: %s\n", message);
-	exit(EXIT_FAILURE);
-}
-
-static void	take_forks_even(t_philosophers *philo)
-{
-	pthread_mutex_lock(philo->right_fork);
-	print_status(philo, "has taken a fork");
-	pthread_mutex_lock(philo->left_fork);
-	print_status(philo, "has taken a fork");
-}
-
-static void	take_forks_odd(t_philosophers *philo)
-{
-	pthread_mutex_lock(philo->left_fork);
-	print_status(philo, "has taken a fork");
-	pthread_mutex_lock(philo->right_fork);
-	print_status(philo, "has taken a fork");
-}
-
-void	take_fork(t_philosophers *philosopher)
-{
-	if (is_simulation_stopped(philosopher->program))
-		return ;
-	if (philosopher->id % 2 == 0)
-		take_forks_even(philosopher);
-	else
-		take_forks_odd(philosopher);
-}
-
-void	release_fork(t_philosophers *philosopher)
-{
-	pthread_mutex_unlock(philosopher->left_fork);
-	pthread_mutex_unlock(philosopher->right_fork);
-}
 
 static void	handle_single_philo(t_philosophers *philo)
 {
@@ -122,23 +85,7 @@ static bool	check_philo_death(t_program *program, int i, size_t current_time)
 	return (false);
 }
 
-static bool	check_all_ate(t_program *program)
-{
-	int		i;
-	bool	all_ate;
 
-	i = 0;
-	all_ate = true;
-	while (i < program->philosopher_count)
-	{
-		if (program->philosophers[i].number_times_to_eat != -1
-			&& program->philosophers[i].meal_count
-			< program->philosophers[i].number_times_to_eat)
-			all_ate = false;
-		i++;
-	}
-	return (all_ate);
-}
 
 void	*monitor_routine(void *arg)
 {
@@ -168,47 +115,3 @@ void	*monitor_routine(void *arg)
 	return (NULL);
 }
 
-
-
-void	start_simulation(t_program *program)
-{
-	pthread_t	monitor;
-	int			i;
-
-	if (pthread_create(&monitor, NULL, monitor_routine, program) != 0)
-		error_exit("pthread_create failed");
-	i = 0;
-	while (i < program->philosopher_count)
-	{
-		if (pthread_create(&program->philosophers[i].thread, NULL,
-				philo_routine, &program->philosophers[i]) != 0)
-			error_exit("pthread_create failed");
-		i++;
-	}
-	pthread_join(monitor, NULL);
-	i = 0;
-	while (i < program->philosopher_count)
-		pthread_join(program->philosophers[i++].thread, NULL);
-}
-
-int	main(int ac, char **av)
-{
-	t_program	*program;
-
-	if (ac < 5 || ac > 6)
-	{
-		printf("Usage: %s number_of_philosophers time_to_die time_to_eat "
-			"time_to_sleep [number_of_times_each_philosopher_must_eat]\n",
-			av[0]);
-		return (EXIT_FAILURE);
-	}
-	program = malloc(sizeof(t_program));
-	if (!program)
-		error_exit("malloc failed");
-	program_init(ac, av, program);
-	start_simulation(program);
-	free(program->philosophers);
-	free(program->forks);
-	free(program);
-	return (EXIT_SUCCESS);
-}

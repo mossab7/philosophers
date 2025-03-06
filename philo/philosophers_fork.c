@@ -1,0 +1,63 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   philosophers_fork.c                                :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: mbouhia <marvin@42.fr>                     +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/03/06 22:01:48 by mbouhia           #+#    #+#             */
+/*   Updated: 2025/03/06 22:01:53 by mbouhia          ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "philosophers.h"
+
+static void	take_forks_even(t_philosophers *philo)
+{
+	pthread_mutex_lock(philo->right_fork);
+	print_status(philo, "has taken a fork");
+	pthread_mutex_lock(philo->left_fork);
+	print_status(philo, "has taken a fork");
+}
+
+static void	take_forks_odd(t_philosophers *philo)
+{
+	pthread_mutex_lock(philo->left_fork);
+	print_status(philo, "has taken a fork");
+	pthread_mutex_lock(philo->right_fork);
+	print_status(philo, "has taken a fork");
+}
+
+void	take_fork(t_philosophers *philosopher)
+{
+	if (is_simulation_stopped(philosopher->program))
+		return ;
+	if (philosopher->id % 2 == 0)
+		take_forks_even(philosopher);
+	else
+		take_forks_odd(philosopher);
+}
+
+void	release_fork(t_philosophers *philosopher)
+{
+	pthread_mutex_unlock(philosopher->left_fork);
+	pthread_mutex_unlock(philosopher->right_fork);
+}
+
+static bool	check_all_ate(t_program *program)
+{
+	int		i;
+	bool	all_ate;
+
+	i = 0;
+	all_ate = true;
+	while (i < program->philosopher_count)
+	{
+		if (program->philosophers[i].number_times_to_eat != -1
+			&& program->philosophers[i].meal_count
+			< program->philosophers[i].number_times_to_eat)
+			all_ate = false;
+		i++;
+	}
+	return (all_ate);
+}
