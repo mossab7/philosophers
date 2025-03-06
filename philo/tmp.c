@@ -182,7 +182,8 @@ static bool	check_philo_death(t_program *program, int i, size_t current_time)
 		if (!program->simulation_stop)
 		{
 			program->simulation_stop = true;
-			printf("%zu %d died\n", current_time, program->philosophers[i].id + 1);
+			printf("%zu %d died\n"\
+				, current_time, program->philosophers[i].id + 1);
 		}
 		pthread_mutex_unlock(&program->stop_mutex);
 		pthread_mutex_unlock(&program->print);
@@ -227,7 +228,8 @@ void	*monitor_routine(void *arg)
 				return (NULL);
 			i++;
 		}
-		if (check_all_ate(program) && program->philosophers[0].number_times_to_eat != -1)
+		if (check_all_ate(program)
+			&& program->philosophers[0].number_times_to_eat != -1)
 		{
 			set_simulation_stopped(program);
 			return (NULL);
@@ -237,7 +239,8 @@ void	*monitor_routine(void *arg)
 	return (NULL);
 }
 
-static void	init_philosophers(t_program *program, int count, char **args, int ac)
+static void
+	init_philosophers(t_program *program, int count, char **args, int ac)
 {
 	int	i;
 
