@@ -25,7 +25,7 @@ void	init_philosophers(t_program *program, int count, char **args, int ac)
 		program->philosophers[i].time_to_sleep = atoi(args[4]);
 		program->philosophers[i].number_of_philosopher = count;
 		program->philosophers[i].meal_count = 0;
-		program->philosophers[i].last_meal = get_time();
+		program->philosophers[i].last_meal = get_time(program);
 		program->philosophers[i].program = program;
 		program->philosophers[i].left_fork = &program->forks[i];
 		program->philosophers[i].right_fork = &program->forks[(i + 1) % count];
@@ -47,6 +47,8 @@ void	program_init(int ac, char **args, t_program *program)
 	program->philosopher_count = count;
 	program->all_ate_enough = false;
 	program->simulation_stop = false;
+	program->start_time = 0;
+	program->start_time = get_time(program);
 	program->forks = malloc(count * sizeof(pthread_mutex_t));
 	if (!program->forks)
 		error_exit("malloc failed");

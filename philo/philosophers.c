@@ -12,7 +12,6 @@
 
 #include "philosophers.h"
 
-
 void	handle_single_philo(t_philosophers *philo)
 {
 	print_status(philo, "has taken a fork");
@@ -21,10 +20,10 @@ void	handle_single_philo(t_philosophers *philo)
 
 void	eat_sleep_think(t_philosophers *philo)
 {
-	long time_till_death;
+	long	time_till_death;
 
 	pthread_mutex_lock(&philo->meal_lock);
-	philo->last_meal = get_time();
+	philo->last_meal = get_time(philo->program);
 	print_status(philo, "is eating");
 	pthread_mutex_unlock(&philo->meal_lock);
 	ft_sleep(philo, philo->time_to_eat);
@@ -35,11 +34,11 @@ void	eat_sleep_think(t_philosophers *philo)
 	print_status(philo, "is sleeping");
 	ft_sleep(philo, philo->time_to_sleep);
 	print_status(philo, "is thinking");
-	// if (philo->time_to_eat > philo->time_to_sleep)
-	// 	ft_sleep(philo, philo->time_to_eat - philo->time_to_sleep);
-	time_till_death = get_time() - philo->last_meal;
+	if (philo->id % 2 == 0)
+		return ;
+	time_till_death = get_time(philo->program) - philo->last_meal;
 	if (time_till_death < philo->time_to_die * 0.7)
-			ft_sleep(philo,1);
+		usleep((philo->time_to_die - time_till_death) * 600);
 }
 
 void	*philo_routine(void *arg)
@@ -70,7 +69,8 @@ void	*philo_routine(void *arg)
 bool	check_philo_death(t_program *program, int i, size_t current_time)
 {
 	pthread_mutex_lock(&program->philosophers[i].meal_lock);
-	if (current_time - program->philosophers[i].last_meal
+	if (current_time
+		- program->philosophers[i].last_meal
 		> (size_t)program->philosophers[i].time_to_die)
 	{
 		pthread_mutex_unlock(&program->philosophers[i].meal_lock);
@@ -79,8 +79,8 @@ bool	check_philo_death(t_program *program, int i, size_t current_time)
 		if (!program->simulation_stop)
 		{
 			program->simulation_stop = true;
-			printf("%zu %d died\n"\
-				, current_time, program->philosophers[i].id + 1);
+			printf("%zu %d died\n", current_time, program->philosophers[i].id
+				+ 1);
 		}
 		pthread_mutex_unlock(&program->stop_mutex);
 		pthread_mutex_unlock(&program->print);
@@ -102,7 +102,7 @@ void	*monitor_routine(void *arg)
 		i = 0;
 		while (i < program->philosopher_count)
 		{
-			current_time = get_time();
+			current_time = get_time(program);
 			if (check_philo_death(program, i, current_time))
 				return (NULL);
 			i++;
@@ -117,4 +117,3 @@ void	*monitor_routine(void *arg)
 	}
 	return (NULL);
 }
-

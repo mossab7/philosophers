@@ -12,7 +12,7 @@
 
 #include "philosophers.h"
 
-size_t	get_time(void)
+size_t	get_time(t_program *program)
 {
 	struct timeval	curtime;
 
@@ -21,7 +21,8 @@ size_t	get_time(void)
 		perror("gettimeofday failed");
 		return (0);
 	}
-	return (curtime.tv_sec * 1000 + curtime.tv_usec / 1000);
+	return ((curtime.tv_sec * 1000 + curtime.tv_usec / 1000)
+		- program->start_time);
 }
 
 void	ft_sleep(t_philosophers *philosopher, size_t milliseconds)
@@ -30,7 +31,7 @@ void	ft_sleep(t_philosophers *philosopher, size_t milliseconds)
 	bool	is_stopped;
 	size_t	current;
 
-	start = get_time();
+	start = get_time(philosopher->program);
 	while (1)
 	{
 		pthread_mutex_lock(&philosopher->program->stop_mutex);
@@ -38,7 +39,7 @@ void	ft_sleep(t_philosophers *philosopher, size_t milliseconds)
 		pthread_mutex_unlock(&philosopher->program->stop_mutex);
 		if (is_stopped)
 			break ;
-		current = get_time();
+		current = get_time(philosopher->program);
 		if (current - start >= milliseconds)
 			break ;
 		usleep(50);
@@ -71,7 +72,7 @@ void	print_status(t_philosophers *philosopher, char *status)
 	pthread_mutex_lock(&philosopher->program->stop_mutex);
 	is_stopped = philosopher->program->simulation_stop;
 	pthread_mutex_unlock(&philosopher->program->stop_mutex);
-	time = get_time();
+	time = get_time(philosopher->program);
 	if (!is_stopped)
 		printf("%zu %d %s\n", time, philosopher->id + 1, status);
 	pthread_mutex_unlock(&philosopher->program->print);
