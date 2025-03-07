@@ -21,6 +21,8 @@ void	handle_single_philo(t_philosophers *philo)
 
 void	eat_sleep_think(t_philosophers *philo)
 {
+	long time_till_death;
+
 	pthread_mutex_lock(&philo->meal_lock);
 	philo->last_meal = get_time();
 	print_status(philo, "is eating");
@@ -35,6 +37,9 @@ void	eat_sleep_think(t_philosophers *philo)
 	print_status(philo, "is thinking");
 	if (philo->time_to_eat > philo->time_to_sleep)
 		ft_sleep(philo, philo->time_to_eat - philo->time_to_sleep);
+	time_till_death = get_time() - philo->last_meal;
+		if (time_till_death < philo->time_to_die * 0.7)
+			ft_sleep(philo,1);
 }
 
 void	*philo_routine(void *arg)
@@ -84,8 +89,6 @@ bool	check_philo_death(t_program *program, int i, size_t current_time)
 	pthread_mutex_unlock(&program->philosophers[i].meal_lock);
 	return (false);
 }
-
-
 
 void	*monitor_routine(void *arg)
 {
