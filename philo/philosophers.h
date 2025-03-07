@@ -39,11 +39,26 @@ typedef struct s_program {
 void	error_exit(char *message);
 void	start_simulation(t_program *program);
 void	*monitor_routine(void *arg);
-static bool	check_philo_death(t_program *program, int i, size_t current_time);
+ bool	check_philo_death(t_program *program, int i, size_t current_time);
 void	*philo_routine(void *arg);
-static void	eat_sleep_think(t_philosophers *philo);
-static void	handle_single_philo(t_philosophers *philo);
-
+ void	eat_sleep_think(t_philosophers *philo);
+ void	handle_single_philo(t_philosophers *philo);
+ void	eat_sleep_think(t_philosophers *philo);
+void	*philo_routine(void *arg);
+ bool	check_philo_death(t_program *program, int i, size_t current_time);
+void	*monitor_routine(void *arg);
+size_t	get_time(void);
+void	ft_sleep(t_philosophers *philosopher, size_t milliseconds);
+bool	is_simulation_stopped(t_program *program);
+void	set_simulation_stopped(t_program *program);
+void	print_status(t_philosophers *philosopher, char *status);
+void	init_philosophers(t_program *program, int count, char **args, int ac);
+void	program_init(int ac, char **args, t_program *program);
+void	take_forks_even(t_philosophers *philo);
+void	take_forks_odd(t_philosophers *philo);
+void	take_fork(t_philosophers *philosopher);
+void	release_fork(t_philosophers *philosopher);
+bool	check_all_ate(t_program *program);
 
 
 

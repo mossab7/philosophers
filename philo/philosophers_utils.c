@@ -12,7 +12,7 @@
 
 #include "philosophers.h"
 
-static size_t	get_time(void)
+size_t	get_time(void)
 {
 	struct timeval	curtime;
 
@@ -55,7 +55,7 @@ bool	is_simulation_stopped(t_program *program)
 	return (is_stopped);
 }
 
-static void	set_simulation_stopped(t_program *program)
+void	set_simulation_stopped(t_program *program)
 {
 	pthread_mutex_lock(&program->stop_mutex);
 	program->simulation_stop = true;

@@ -12,7 +12,7 @@
 
 #include "philosophers.h"
 
-static void	take_forks_even(t_philosophers *philo)
+void	take_forks_even(t_philosophers *philo)
 {
 	pthread_mutex_lock(philo->right_fork);
 	print_status(philo, "has taken a fork");
@@ -20,7 +20,7 @@ static void	take_forks_even(t_philosophers *philo)
 	print_status(philo, "has taken a fork");
 }
 
-static void	take_forks_odd(t_philosophers *philo)
+void	take_forks_odd(t_philosophers *philo)
 {
 	pthread_mutex_lock(philo->left_fork);
 	print_status(philo, "has taken a fork");
@@ -44,7 +44,7 @@ void	release_fork(t_philosophers *philosopher)
 	pthread_mutex_unlock(philosopher->right_fork);
 }
 
-static bool	check_all_ate(t_program *program)
+bool	check_all_ate(t_program *program)
 {
 	int		i;
 	bool	all_ate;

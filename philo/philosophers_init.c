@@ -12,8 +12,7 @@
 
 #include "philosophers.h"
 
-static void
-	init_philosophers(t_program *program, int count, char **args, int ac)
+void	init_philosophers(t_program *program, int count, char **args, int ac)
 {
 	int	i;
 

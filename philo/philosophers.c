@@ -13,13 +13,13 @@
 #include "philosophers.h"
 
 
-static void	handle_single_philo(t_philosophers *philo)
+void	handle_single_philo(t_philosophers *philo)
 {
 	print_status(philo, "has taken a fork");
 	ft_sleep(philo, philo->time_to_die);
 }
 
-static void	eat_sleep_think(t_philosophers *philo)
+void	eat_sleep_think(t_philosophers *philo)
 {
 	pthread_mutex_lock(&philo->meal_lock);
 	philo->last_meal = get_time();
@@ -62,7 +62,7 @@ void	*philo_routine(void *arg)
 	return (NULL);
 }
 
-static bool	check_philo_death(t_program *program, int i, size_t current_time)
+bool	check_philo_death(t_program *program, int i, size_t current_time)
 {
 	pthread_mutex_lock(&program->philosophers[i].meal_lock);
 	if (current_time - program->philosophers[i].last_meal
