@@ -53,10 +53,12 @@ bool	check_all_ate(t_program *program)
 	all_ate = true;
 	while (i < program->philosopher_count)
 	{
+		pthread_mutex_lock(&program->philosophers[i].meal_lock);
 		if (program->philosophers[i].number_times_to_eat != -1
 			&& program->philosophers[i].meal_count
 			< program->philosophers[i].number_times_to_eat)
 			all_ate = false;
+		pthread_mutex_unlock(&program->philosophers[i].meal_lock);
 		i++;
 	}
 	return (all_ate);
