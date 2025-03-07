@@ -35,10 +35,10 @@ void	eat_sleep_think(t_philosophers *philo)
 	print_status(philo, "is sleeping");
 	ft_sleep(philo, philo->time_to_sleep);
 	print_status(philo, "is thinking");
-	if (philo->time_to_eat > philo->time_to_sleep)
-		ft_sleep(philo, philo->time_to_eat - philo->time_to_sleep);
+	// if (philo->time_to_eat > philo->time_to_sleep)
+	// 	ft_sleep(philo, philo->time_to_eat - philo->time_to_sleep);
 	time_till_death = get_time() - philo->last_meal;
-		if (time_till_death < philo->time_to_die * 0.7)
+	if (time_till_death < philo->time_to_die * 0.7)
 			ft_sleep(philo,1);
 }
 

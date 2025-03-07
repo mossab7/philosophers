@@ -6,12 +6,12 @@ OBJS=$(SRC:%.c=%.o)
 HEADER = philosophers.h
 
 all: $(NAME)
+$(NAME) : $(OBJS) $(HEADER)
+	$(CC) $(FLAGS) $(OBJS) -o $(NAME)
 
 %.o: %.c
 	$(CC) $(FLAGS) -c $^ -o $@
 
-$(NAME) : $(OBJS) $(HEADER)
-	$(CC) $(FLAGS) $(OBJS) -o $(NAME)
 
 clean :
 	rm -rf $(OBJS)
