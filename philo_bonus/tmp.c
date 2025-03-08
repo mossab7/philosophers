@@ -1,5 +1,104 @@
 #include "philosophers_bonus.h"
 
+size_t	get_time(t_program *program)
+{
+	struct timeval	curtime;
+
+	if (gettimeofday(&curtime, NULL) != 0)
+	{
+		perror("gettimeofday failed");
+		return (0);
+	}
+	return ((curtime.tv_sec * 1000 + curtime.tv_usec / 1000)
+		- program->start_time);
+}
+
+void	ft_sleep(t_philosophers *philosopher, size_t milliseconds)
+{
+	size_t	start;
+	bool	is_stopped;
+	size_t	current;
+
+	start = get_time(philosopher->program);
+	while (1)
+	{
+		sem_wait(&philosopher->program->stop_sem);
+		is_stopped = philosopher->program->simulation_stop;
+		sem_post(&philosopher->program->stop_sem);
+		if (is_stopped)
+			break ;
+		current = get_time(philosopher->program);
+		if (current - start >= milliseconds)
+			break ;
+		usleep(50);
+	}
+}
+
+bool	is_simulation_stopped(t_program *program)
+{
+	bool	is_stopped;
+
+	sem_wait(&program->stop_sem);
+	is_stopped = program->simulation_stop;
+	sem_post(&program->stop_sem);
+	return (is_stopped);
+}
+
+void	set_simulation_stopped(t_program *program)
+{
+	sem_wait(&program->stop_sem);
+	program->simulation_stop = true;
+	sem_post(&program->stop_sem);
+}
+
+void	print_status(t_philosophers *philosopher, char *status)
+{
+	bool	is_stopped;
+	size_t	time;
+
+	sem_wait(&philosopher->program->print);
+	sem_wait(&philosopher->program->stop_sem);
+	is_stopped = philosopher->program->simulation_stop;
+	sem_post(&philosopher->program->stop_sem);
+	time = get_time(philosopher->program);
+	if (!is_stopped)
+		printf("%zu %d %s\n", time, philosopher->id + 1, status);
+	sem_post(&philosopher->program->print);
+}
+
+void	take_forks_even(t_philosophers *philo)
+{
+	sem_wait(philo->right_fork);
+	print_status(philo, "has taken a fork");
+	sem_wait(philo->left_fork);
+	print_status(philo, "has taken a fork");
+}
+
+void	take_forks_odd(t_philosophers *philo)
+{
+	sem_wait(philo->left_fork);
+	print_status(philo, "has taken a fork");
+	sem_wait(philo->right_fork);
+	print_status(philo, "has taken a fork");
+}
+
+void	take_fork(t_philosophers *philosopher)
+{
+	if (is_simulation_stopped(philosopher->program))
+		return ;
+	if (philosopher->id % 2 == 0)
+		take_forks_even(philosopher);
+	else
+		take_forks_odd(philosopher);
+}
+
+void	release_fork(t_philosophers *philosopher)
+{
+	sem_post(philosopher->left_fork);
+	sem_post(philosopher->right_fork);
+}
+
+
 void init_philosophers(int ac, char **av, t_program *program)
 {
 	int	i;

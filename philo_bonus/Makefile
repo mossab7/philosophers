@@ -1,7 +1,7 @@
 CC = cc -g -O3
 NAME = philosophers
 FLAGS = -Wall -Wextra -Werror
-SRC = philosophers.c
+SRC = philosophers.c ft_itoa.c
 OBJS=$(SRC:%.c=%.o)
 HEADER = philosophers.h
 

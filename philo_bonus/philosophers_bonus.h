@@ -1,27 +1,18 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   philosophers.h                                     :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: mbouhia <marvin@42.fr>                     +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/03/07 15:16:06 by mbouhia           #+#    #+#             */
-/*   Updated: 2025/03/07 15:16:08 by mbouhia          ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
-#ifndef PHILOSOPHERS_H
-# define PHILOSOPHERS_H
+#ifndef PHILOSOPHERS_BONUS_H
+# define PHILOSOPHERS_BONUS_H
 
 # include <pthread.h>
+# include <semaphore.h>
+# include <signal.h>
 # include <stdbool.h>
 # include <stdio.h>
 # include <stdlib.h>
 # include <sys/time.h>
-# include <string.h>
+# include <sys/wait.h>
 # include <unistd.h>
+# include <fcntl.h>
 
-typedef struct s_program	t_program;
+struct s_program;
 
 typedef struct s_philosophers
 {
@@ -33,9 +24,9 @@ typedef struct s_philosophers
 	int						meal_count;
 	int						number_times_to_eat;
 	size_t					last_meal;
-	pthread_mutex_t			meal_lock;
-	pthread_mutex_t			*left_fork;
-	pthread_mutex_t			*right_fork;
+	sem_t					meal_lock;
+	sem_t					*left_fork;
+	sem_t					*right_fork;
 	pthread_t				thread;
 	t_program				*program;
 }							t_philosophers;
@@ -46,10 +37,10 @@ typedef struct s_program
 	size_t					start_time;
 	bool					all_ate_enough;
 	bool					simulation_stop;
-	pthread_mutex_t			*forks;
+	sem_t					*forks;
 	t_philosophers			*philosophers;
-	pthread_mutex_t			print;
-	pthread_mutex_t			stop_mutex;
+	sem_t					print;
+	sem_t					stop_sem;
 }							t_program;
 
 void						error_exit(char *message);
@@ -72,8 +63,8 @@ bool						is_simulation_stopped(t_program *program);
 void						set_simulation_stopped(t_program *program);
 void						print_status(t_philosophers *philosopher,
 								char *status);
-void						init_philosophers(t_program *program, int count,
-								char **args, int ac);
+void						init_philosophers(int ac, char **av,
+								 t_program *program);
 void						program_init(int ac, char **args,
 								t_program *program);
 void						take_forks_even(t_philosophers *philo);
@@ -83,4 +74,5 @@ void						release_fork(t_philosophers *philosopher);
 bool						check_all_ate(t_program *program);
 int							ft_atoi(const char *str);
 size_t						ft_strlen(char const *s);
-#endif // PHILOSOPHERS_H
+void						*death_listener(void *arg);
+#endif 

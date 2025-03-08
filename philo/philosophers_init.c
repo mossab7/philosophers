@@ -20,9 +20,9 @@ void	init_philosophers(t_program *program, int count, char **args, int ac)
 	while (i < count)
 	{
 		program->philosophers[i].id = i;
-		program->philosophers[i].time_to_die = atoi(args[2]);
-		program->philosophers[i].time_to_eat = atoi(args[3]);
-		program->philosophers[i].time_to_sleep = atoi(args[4]);
+		program->philosophers[i].time_to_die = ft_atoi(args[2]);
+		program->philosophers[i].time_to_eat = ft_atoi(args[3]);
+		program->philosophers[i].time_to_sleep = ft_atoi(args[4]);
 		program->philosophers[i].number_of_philosopher = count;
 		program->philosophers[i].meal_count = 0;
 		program->philosophers[i].last_meal = get_time(program);
@@ -31,7 +31,7 @@ void	init_philosophers(t_program *program, int count, char **args, int ac)
 		program->philosophers[i].right_fork = &program->forks[(i + 1) % count];
 		pthread_mutex_init(&program->philosophers[i].meal_lock, NULL);
 		if (ac == 6)
-			program->philosophers[i].number_times_to_eat = atoi(args[5]);
+			program->philosophers[i].number_times_to_eat = ft_atoi(args[5]);
 		else
 			program->philosophers[i].number_times_to_eat = -1;
 		i++;
@@ -43,7 +43,7 @@ void	program_init(int ac, char **args, t_program *program)
 	int		count;
 	int		i;
 
-	count = atoi(args[1]);
+	count = ft_atoi(args[1]);
 	program->philosopher_count = count;
 	program->all_ate_enough = false;
 	program->simulation_stop = false;
