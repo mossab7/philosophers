@@ -174,16 +174,8 @@ void	*death_listener(void *arg)
 	while(1)
 	{
 		sem_wait(&philo->program->stop_sem);
-		sem_wait(&philo->meal_lock);
-		if(philo->program->all_ate_enough)
-		{
-			sem_post(&philo->meal_lock);
-			sem_post(&philo->program->stop_sem);
-			cleanup(philo);
-			exit(0);
-		}
-		sem_post(&philo->meal_lock);
-		sem_post(&philo->program->stop_sem);
+		cleanup(philo);
+		exit(0);
 	}
 }
 

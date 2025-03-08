@@ -1,105 +1,129 @@
 #include "philosophers_bonus.h"
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/wait.h>
+#include <signal.h>
+
+void	error_exit(char *message)
+{
+	int	r;
+
+	r = write(2, "Error: ", 8);
+	r = write(2, message, strlen(message));
+	r = write(2, "\n", 1);
+	(void)r;
+	exit(EXIT_FAILURE);
+}
 
 size_t	get_time(t_program *program)
 {
 	struct timeval	curtime;
 
-	if (gettimeofday(&curtime, NULL) != 0)
-	{
-		perror("gettimeofday failed");
-		return (0);
-	}
-	return ((curtime.tv_sec * 1000 + curtime.tv_usec / 1000)
-		- program->start_time);
+	gettimeofday(&curtime, NULL);
+	return ((curtime.tv_sec * 1000 + curtime.tv_usec / 1000) - program->start_time);
 }
 
-void	ft_sleep(t_philosophers *philosopher, size_t milliseconds)
+void	ft_sleep(t_philosophers *philo, size_t milliseconds)
 {
-	size_t	start;
-	bool	is_stopped;
-	size_t	current;
-
-	start = get_time(philosopher->program);
-	while (1)
-	{
-		sem_wait(&philosopher->program->stop_sem);
-		is_stopped = philosopher->program->simulation_stop;
-		sem_post(&philosopher->program->stop_sem);
-		if (is_stopped)
-			break ;
-		current = get_time(philosopher->program);
-		if (current - start >= milliseconds)
-			break ;
-		usleep(50);
-	}
+	size_t	start = get_time(philo->program);
+	while (get_time(philo->program) - start < milliseconds)
+		usleep(500);
 }
 
 bool	is_simulation_stopped(t_program *program)
 {
-	bool	is_stopped;
+	bool	stopped;
 
-	sem_wait(&program->stop_sem);
-	is_stopped = program->simulation_stop;
-	sem_post(&program->stop_sem);
-	return (is_stopped);
+	sem_wait(program->stop_sem);
+	stopped = program->simulation_stop;
+	sem_post(program->stop_sem);
+	return (stopped);
 }
 
 void	set_simulation_stopped(t_program *program)
 {
-	sem_wait(&program->stop_sem);
+	sem_wait(program->stop_sem);
 	program->simulation_stop = true;
-	sem_post(&program->stop_sem);
+	sem_post(program->stop_sem);
 }
 
-void	print_status(t_philosophers *philosopher, char *status)
+void	print_status(t_philosophers *philo, char *status)
 {
-	bool	is_stopped;
-	size_t	time;
-
-	sem_wait(&philosopher->program->print);
-	sem_wait(&philosopher->program->stop_sem);
-	is_stopped = philosopher->program->simulation_stop;
-	sem_post(&philosopher->program->stop_sem);
-	time = get_time(philosopher->program);
-	if (!is_stopped)
-		printf("%zu %d %s\n", time, philosopher->id + 1, status);
-	sem_post(&philosopher->program->print);
+	sem_wait(philo->program->print_sem);
+	if (!is_simulation_stopped(philo->program))
+		printf("%zu %d %s\n", get_time(philo->program), philo->id, status);
+	sem_post(philo->program->print_sem);
 }
 
-void	take_forks_even(t_philosophers *philo)
+void	take_forks(t_philosophers *philo)
 {
-	sem_wait(philo->right_fork);
+	sem_wait(philo->program->mutex_sem);
+	sem_wait(philo->program->forks_sem);
+	sem_wait(philo->program->forks_sem);
+	sem_post(philo->program->mutex_sem);
 	print_status(philo, "has taken a fork");
-	sem_wait(philo->left_fork);
 	print_status(philo, "has taken a fork");
 }
 
-void	take_forks_odd(t_philosophers *philo)
+void	release_forks(t_philosophers *philo)
 {
-	sem_wait(philo->left_fork);
-	print_status(philo, "has taken a fork");
-	sem_wait(philo->right_fork);
-	print_status(philo, "has taken a fork");
+	sem_post(philo->program->forks_sem);
+	sem_post(philo->program->forks_sem);
 }
 
-void	take_fork(t_philosophers *philosopher)
+void	eat_sleep_think(t_philosophers *philo)
 {
-	if (is_simulation_stopped(philosopher->program))
-		return ;
-	if (philosopher->id % 2 == 0)
-		take_forks_even(philosopher);
-	else
-		take_forks_odd(philosopher);
+	take_forks(philo);
+	sem_wait(&philo->meal_lock);
+	philo->last_meal = get_time(philo->program);
+	print_status(philo, "is eating");
+	sem_post(&philo->meal_lock);
+	ft_sleep(philo, philo->time_to_eat);
+	sem_wait(&philo->meal_lock);
+	philo->meal_count++;
+	sem_post(&philo->meal_lock);
+	release_forks(philo);
+	print_status(philo, "is sleeping");
+	ft_sleep(philo, philo->time_to_sleep);
+	print_status(philo, "is thinking");
 }
 
-void	release_fork(t_philosophers *philosopher)
+void	*monitor_routine(void *arg)
 {
-	sem_post(philosopher->left_fork);
-	sem_post(philosopher->right_fork);
+	t_philosophers	*philo = (t_philosophers *)arg;
+
+	while (1)
+	{
+		usleep(1000);
+		sem_wait(&philo->meal_lock);
+		if (get_time(philo->program) - philo->last_meal > philo->time_to_die)
+		{
+			print_status(philo, "died");
+			sem_post(philo->program->stop_sem);
+			exit(1);
+		}
+		sem_post(&philo->meal_lock);
+		if (is_simulation_stopped(philo->program))
+			break ;
+	}
+	return (NULL);
 }
 
+void	philo_routine(t_philosophers *philo)
+{
+	pthread_t	monitor;
 
-void init_philosophers(int ac, char **av, t_program *program)
+	philo->last_meal = get_time(philo->program);
+	pthread_create(&monitor, NULL, monitor_routine, philo);
+	if (philo->id % 2 == 0)
+		usleep(philo->time_to_eat * 900);
+	while (!is_simulation_stopped(philo->program))
+		eat_sleep_think(philo);
+	pthread_join(monitor, NULL);
+	exit(0);
+}
+
+void	init_philosophers(int ac, char **av, t_program *program)
 {
 	int	i;
 
@@ -110,210 +134,84 @@ void init_philosophers(int ac, char **av, t_program *program)
 		program->philosophers[i].time_to_die = ft_atoi(av[2]);
 		program->philosophers[i].time_to_eat = ft_atoi(av[3]);
 		program->philosophers[i].time_to_sleep = ft_atoi(av[4]);
-		program->philosophers[i].number_of_philosopher = program->philosopher_count;
 		program->philosophers[i].meal_count = 0;
-		program->philosophers[i].number_times_to_eat = -1;
-		if (ac == 6)
-			program->philosophers[i].number_times_to_eat = ft_atoi(av[5]);
-		else
-			program->philosophers[i].number_times_to_eat = -1;
-		program->philosophers[i].last_meal = get_time(program);
-		sem_init(&program->philosophers[i].meal_lock, 0, 1);
-		program->philosophers[i].left_fork = &program->forks[i];
-		program->philosophers[i].right_fork = &program->forks[(i + 1) % program->philosopher_count];
+		program->philosophers[i].number_times_to_eat = (ac == 6) ? ft_atoi(av[5]) : -1;
+		sem_init(&program->philosophers[i].meal_lock, 1, 1);
 		program->philosophers[i].program = program;
 		i++;
 	}
 }
 
-void program_init(int ac,char **av,t_program *program)
+void	program_init(int ac, char **av, t_program *program)
 {
-	int	i;
-	char *id;
-
 	program->philosopher_count = ft_atoi(av[1]);
-	program->start_time = 0;
 	program->start_time = get_time(program);
-	program->all_ate_enough = false;
 	program->simulation_stop = false;
-	program->forks = malloc(sizeof(sem_t) * program->philosopher_count);
-	if (!program->forks)
-		error_exit("malloc failed");
-	i = 0;
-	while (i < program->philosopher_count)
-	{
-		id = ft_itoa(i);
-		sem_open(ft_strjoin("/fork_",id), O_CREAT, 0644, 1);
-		free(id);
-		i++;
-	}
-	sem_open("/print", O_CREAT, 0644, 1);
-	sem_open("/stop_mutex", O_CREAT, 0644, 1);
+
+	program->forks_sem = sem_open("/forks_sem", O_CREAT, 0644, program->philosopher_count);
+	program->mutex_sem = sem_open("/mutex_sem", O_CREAT, 0644, 1);
+	program->print_sem = sem_open("/print_sem", O_CREAT, 0644, 1);
+	program->stop_sem = sem_open("/stop_sem", O_CREAT, 0644, 1);
+
+	if (program->forks_sem == SEM_FAILED || program->mutex_sem == SEM_FAILED ||
+		program->print_sem == SEM_FAILED || program->stop_sem == SEM_FAILED)
+		error_exit("sem_open failed");
+
 	program->philosophers = malloc(sizeof(t_philosophers) * program->philosopher_count);
 	if (!program->philosophers)
 		error_exit("malloc failed");
-	init_philosophers(ac,av, program);
+	init_philosophers(ac, av, program);
 }
 
 bool	check_arguments(int ac, char **av)
 {
-	int	i;
-	int	j;
+	int	i, j;
 
 	if (ac < 5 || ac > 6)
 	{
-		printf("Usage:\
-			%s number_of_philosophers time_to_die time_to_eat\
-				time_to_sleep[number_of_times_each_philosopher_must_eat]\n ",
-			av[0]);
+		printf("Usage: %s philo_count die_time eat_time sleep_time [meal_count]\n", av[0]);
 		return (false);
 	}
-	i = 1;
-	while (i < ac)
+	for (i = 1; i < ac; i++)
 	{
-		j = 0;
-		while (av[i][j])
-		{
+		for (j = 0; av[i][j]; j++)
 			if (av[i][j] < '0' || av[i][j] > '9')
-			{
-				printf("Error: Arguments must be positive integers.\n");
-				return (false);
-			}
-			j++;
-		}
-		i++;
+				return (printf("Error: Non-numeric argument\n"), false);
+		if (ft_atoi(av[i]) <= 0)
+			return (printf("Error: Invalid argument\n"), false);
 	}
 	return (true);
 }
 
-void	eat_sleep_think(t_philosophers *philo)
+void	start_simulation(t_program *program)
 {
-	long	time_till_death;
+	pid_t	*pids = malloc(sizeof(pid_t) * program->philosopher_count);
+	int		i;
 
-	sem_wait(&philo->meal_lock);
-	philo->last_meal = get_time(philo->program);
-	print_status(philo, "is eating");
-	sem_post(&philo->meal_lock);
-	ft_sleep(philo, philo->time_to_eat);
-	sem_wait(&philo->meal_lock);
-	philo->meal_count++;
-	sem_post(&philo->meal_lock);
-	release_fork(philo);
-	print_status(philo, "is sleeping");
-	ft_sleep(philo, philo->time_to_sleep);
-	print_status(philo, "is thinking");
-	if (philo->id % 2 == 0)
-		return ;
-	time_till_death = get_time(philo->program) - philo->last_meal;
-	if (time_till_death < philo->time_to_die * 0.7)
-		usleep((philo->time_to_die - time_till_death) * 600);
+	for (i = 0; i < program->philosopher_count; i++)
+	{
+		pids[i] = fork();
+		if (pids[i] == 0)
+			philo_routine(&program->philosophers[i]);
+	}
+	waitpid(-1, NULL, 0);
+	for (i = 0; i < program->philosopher_count; i++)
+		kill(pids[i], SIGKILL);
+	free(pids);
 }
 
-void	*philo_routine(void *arg)
+void	free_resources(t_program *program)
 {
-	t_philosophers	*philo;
-
-	philo = (t_philosophers *)arg;
-	if (philo->number_of_philosopher == 1)
-	{
-		handle_single_philo(philo);
-		return (NULL);
-	}
-	if (philo->id % 2 == 0)
-		ft_sleep(philo, 50);
-	while (!is_simulation_stopped(philo->program))
-	{
-		take_fork(philo);
-		if (is_simulation_stopped(philo->program))
-		{
-			release_fork(philo);
-			break ;
-		}
-		eat_sleep_think(philo);
-	}
-	return (NULL);
-}
-
-void	*monitor_routine(void *arg)
-{
-	t_philosophers	*philo;
-	int			i;
-	size_t		current_time;
-
-	philo = (t_philosophers *)arg;
-	current_time = get_time(philo);
-	while(1)
-	{
-		sem_wait(&philo->program->stop_sem);
-		sem_wait(&philo->meal_lock);
-		if(philo->last_meal - current_time > philo->time_to_die)
-		{
-			i = 0;
-			while(i < philo->program->philosopher_count)
-			{
-				sem_post(&philo->program->simulation_stop);
-				i++;
-			}
-			print_status(philo, "died");
-			sem_post(&philo->meal_lock);
-			set_simulation_stopped(philo->program);
-			break ;
-		}
-		sem_post(&philo->meal_lock);
-		sem_post(&philo->program->stop_sem);
-	}
-	return (NULL);
-}
-
-void	*death_listener(void *arg)
-{
-	t_philosophers	*philo;
-
-	philo = (t_philosophers *)arg;
-	while(1)
-	{
-		sem_wait(&philo->program->stop_sem);
-		sem_wait(&philo->meal_lock);
-		if(philo->program->all_ate_enough)
-		{
-			sem_post(&philo->meal_lock);
-			sem_post(&philo->program->stop_sem);
-			cleanup(philo);
-			exit(0);
-		}
-		sem_post(&philo->meal_lock);
-		sem_post(&philo->program->stop_sem);
-	}
-}
-
-void start_simulation(t_program *program)
-{
-	pid_t *pid;
-	int i;
-
-	i = 0;
-	pid = malloc(sizeof(pid_t) * program->philosopher_count);
-	while (i < program->philosopher_count)
-	{
-		pid[i] = fork();
-		if (pid[i] == 0)
-		{
-			pthread_create(&program->philosophers[i].thread, NULL, philo_routine, &program->philosophers[i]);
-			pthread_creat(&program->philosophers[i].thread, NULL, monitor_routine, &program->philosophers[i]);
-			pthread_creat(&program->philosophers[i].thread, NULL, death_listener, &program->philosophers[i]);
-			pthread_join(program->philosophers[i].thread, NULL);
-			pthread_join(program->philosophers[i].thread, NULL);
-			pthread_join(program->philosophers[i].thread, NULL);
-			exit(0);
-		}
-		i++;
-	}
-	i = 0;
-	while (i < program->philosopher_count)
-	{
-		waitpid(pid[i], NULL, 0);
-		i++;
-	}
+	sem_close(program->forks_sem);
+	sem_unlink("/forks_sem");
+	sem_close(program->mutex_sem);
+	sem_unlink("/mutex_sem");
+	sem_close(program->print_sem);
+	sem_unlink("/print_sem");
+	sem_close(program->stop_sem);
+	sem_unlink("/stop_sem");
+	free(program->philosophers);
+	free(program);
 }
 
 int	main(int ac, char **av)

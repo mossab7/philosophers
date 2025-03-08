@@ -37,7 +37,7 @@ static int	fetch_digit(unsigned long *num, char digit, int *index, int sign)
 	return (0);
 }
 
-int	ft_ft_atoi(const char *str)
+int	ft_atoi(const char *str)
 {
 	unsigned long	num;
 	int				index;
@@ -45,7 +45,7 @@ int	ft_ft_atoi(const char *str)
 
 	sign = 1;
 	index = 0;
-	while (ft_isspace(str[index]))
+	while (str[index] == ' ' || (str[index] >= 9 && str[index] <= 13))
 		index++;
 	sign = ft_derive_sign(str[index], &index);
 	num = 0;
