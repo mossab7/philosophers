@@ -102,6 +102,7 @@ void	*monitor_routine(void *arg)
 			sem_post(philo->program->stop_sem);
 			exit(1);
 		}
+		if(philo->)
 		sem_post(&philo->meal_lock);
 		if (is_simulation_stopped(philo->program))
 			break ;
@@ -114,12 +115,10 @@ void	philo_routine(t_philosophers *philo)
 	pthread_t	monitor;
 
 	philo->last_meal = get_time(philo->program);
-	pthread_create(&monitor, NULL, monitor_routine, philo);
 	if (philo->id % 2 == 0)
 		usleep(philo->time_to_eat * 900);
 	while (!is_simulation_stopped(philo->program))
 		eat_sleep_think(philo);
-	pthread_join(monitor, NULL);
 	exit(0);
 }
 
@@ -192,9 +191,16 @@ void	start_simulation(t_program *program)
 	{
 		pids[i] = fork();
 		if (pids[i] == 0)
+		{
+			pthread_t monitor;
 			philo_routine(&program->philosophers[i]);
+			pthread_create(&monitor, NULL, monitor_routine, &program->philosophers[i]);
+			pthread_join(&program->philosophers[i],NULL);
+			pthread_join(&monitor,NULL);
+		}
 	}
-	waitpid(-1, NULL, 0);
+	for (i = 0; i < program->philosopher_count; i++)
+		waitpid(pids[i],NULL,0);
 	for (i = 0; i < program->philosopher_count; i++)
 		kill(pids[i], SIGKILL);
 	free(pids);
