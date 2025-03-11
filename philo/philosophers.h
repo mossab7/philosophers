@@ -32,6 +32,7 @@ typedef struct s_philosophers
 	int						number_of_philosopher;
 	int						meal_count;
 	int						number_times_to_eat;
+	bool					forks_acquired;
 	size_t					last_meal;
 	pthread_mutex_t			meal_lock;
 	pthread_mutex_t			*left_fork;

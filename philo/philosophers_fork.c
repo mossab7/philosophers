@@ -18,6 +18,7 @@ void	take_forks_even(t_philosophers *philo)
 	print_status(philo, "has taken a fork");
 	pthread_mutex_lock(philo->left_fork);
 	print_status(philo, "has taken a fork");
+	philo->forks_acquired = true;
 }
 
 void	take_forks_odd(t_philosophers *philo)
@@ -26,10 +27,12 @@ void	take_forks_odd(t_philosophers *philo)
 	print_status(philo, "has taken a fork");
 	pthread_mutex_lock(philo->right_fork);
 	print_status(philo, "has taken a fork");
+	philo->forks_acquired = true;
 }
 
 void	take_fork(t_philosophers *philosopher)
 {
+	philosopher->forks_acquired = false;
 	if (is_simulation_stopped(philosopher->program))
 		return ;
 	if (philosopher->id % 2 == 0)
@@ -40,6 +43,8 @@ void	take_fork(t_philosophers *philosopher)
 
 void	release_fork(t_philosophers *philosopher)
 {
+	if(philosopher->forks_acquired == false)
+		return ;
 	pthread_mutex_unlock(philosopher->left_fork);
 	pthread_mutex_unlock(philosopher->right_fork);
 }
