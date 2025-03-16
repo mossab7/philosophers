@@ -1,9 +1,9 @@
 CC = cc -g -O3
 NAME = philosophers
 FLAGS = -Wall -Wextra -Werror
-SRC = philosophers.c ft_itoa.c
+SRC = philosopher.c 
 OBJS=$(SRC:%.c=%.o)
-HEADER = philosophers.h
+HEADER = philosopher.h
 
 all: $(NAME)
 
