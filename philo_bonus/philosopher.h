@@ -25,7 +25,7 @@ typedef struct s_philosophers
     pthread_t       death_listener_thread;
     sem_t           *forks_sem;
     sem_t           *print_sem;
-    sem_t           *eat_sem;
+    sem_t           *meal_sem;
     sem_t           *death_sem;
     t_program       *program;
 } t_philosophers;
@@ -37,9 +37,10 @@ typedef struct s_program
     int             time_to_eat;
     int             time_to_sleep;
     int             number_of_times_each_philosopher_must_eat;
-    int             simulation_stopped;
+    bool            simulation_stopped;
     long long       start_time;
     sem_t           *stop_sem;
+	pid_t				*pids;
     t_philosophers  *philosophers;
 } t_program;
 
