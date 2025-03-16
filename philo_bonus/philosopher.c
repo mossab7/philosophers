@@ -193,17 +193,22 @@ void *philosopher_routine(void *arg) {
 bool check_philo_death(t_philosophers *philosopher) {
     long long current_time = get_time(philosopher->program);
     bool is_dead = false;
+    
     sem_wait(philosopher->meal_sem);
     if (current_time - philosopher->last_meal > philosopher->program->time_to_die) {
         sem_post(philosopher->meal_sem);
+        
         sem_wait(philosopher->program->stop_sem);
         if (!philosopher->program->simulation_stopped) {
             philosopher->program->simulation_stopped = true;
             is_dead = true;
         }
         sem_post(philosopher->program->stop_sem);
+        
         if (is_dead) {
-            print_status(philosopher, "died");
+            sem_wait(philosopher->print_sem);
+            printf("%lld %d died\n", get_time(philosopher->program), philosopher->id + 1);
+            sem_post(philosopher->print_sem);
             exit(1);
         }
         return is_dead;
