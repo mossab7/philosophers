@@ -1,5 +1,39 @@
 #include "philosopher.h"
+#include <signal.h>
+#include <sys/wait.h>
 
+char *ft_itoa(int n) {
+    int len = 1;
+    int tmp = n;
+    while (tmp /= 10)
+        len++;
+    char *str = malloc(len + 1);
+    if (!str)
+        return NULL;
+    str[len] = '\0';
+    if (n == 0) {
+        str[0] = '0';
+        return str;
+    }
+    while (n > 0) {
+        str[--len] = (n % 10) + '0';
+        n /= 10;
+    }
+    return str;
+}
+
+char *ft_strjoin(char *s1, char *s2) {
+    if (!s1 || !s2)
+        return NULL;
+    int len1 = strlen(s1);
+    int len2 = strlen(s2);
+    char *result = malloc(len1 + len2 + 1);
+    if (!result)
+        return NULL;
+    strcpy(result, s1);
+    strcat(result, s2);
+    return result;
+}
 
 bool check_arguments(int ac, char **av) {
     if (ac < 5 || ac > 6) {
@@ -23,43 +57,50 @@ bool check_arguments(int ac, char **av) {
     return true;
 }
 
-void cleanup_semaphores(void) {
+sem_t *open_sem(char *name, int oflag, mode_t mode, unsigned int value) {
+    sem_unlink(name);
+    sem_t *sem = sem_open(name, oflag, mode, value);
+    if (sem == SEM_FAILED) {
+        printf("Error: Failed to create %s semaphore.\n", name);
+        return NULL;
+    }
+    return sem;
+}
+
+void cleanup_semaphores() {
     sem_unlink("forks_sem");
     sem_unlink("print_sem");
-    sem_unlink("meal_sem");
-    sem_unlink("stop_sem");
+    sem_unlink("death_sem");
+    sem_unlink("philo_full_sem");
+    for (int i = 0; i < 200; i++) {
+        char *stop_name = ft_strjoin("stop_sem_", ft_itoa(i));
+        char *meal_name = ft_strjoin("meal_sem_", ft_itoa(i));
+        sem_unlink(stop_name);
+        sem_unlink(meal_name);
+        free(stop_name);
+        free(meal_name);
+    }
 }
 
 t_philosophers *philosopher_init(t_program *program) {
-    cleanup_semaphores();
     t_philosophers *philosopher = malloc(sizeof(t_philosophers) * program->number_of_philosophers);
     if (!philosopher) {
-        printf("Error: Failed to allocate memory for philosopher.\n");
+        printf("Error: Failed to allocate memory for philosophers.\n");
         return NULL;
     }
-    sem_t *forks_sem = sem_open("forks_sem", O_CREAT, 0644, program->number_of_philosophers);
-    sem_t *print_sem = sem_open("print_sem", O_CREAT, 0644, 1);
-    sem_t *meal_sem = sem_open("meal_sem", O_CREAT, 0644, 1);
-    sem_t *stop_sem = sem_open("stop_sem", O_CREAT, 0644, 1);
-    if (forks_sem == SEM_FAILED || print_sem == SEM_FAILED || meal_sem == SEM_FAILED || stop_sem == SEM_FAILED) {
-        printf("Error: Failed to create semaphores.\n");
-        sem_close(forks_sem);
-        sem_close(print_sem);
-        sem_close(meal_sem);
-        sem_close(stop_sem);
-        cleanup_semaphores();
-        free(philosopher);
-        return NULL;
-    }
+    char *name;
     for (int i = 0; i < program->number_of_philosophers; i++) {
         philosopher[i].id = i;
         philosopher[i].program = program;
-        philosopher[i].forks_sem = forks_sem;
-        philosopher[i].print_sem = print_sem;
-        philosopher[i].meal_sem = meal_sem;
-        philosopher[i].death_sem = stop_sem;
+        name = ft_strjoin("stop_sem_", ft_itoa(i));
+        philosopher[i].stop_sem = open_sem(name, O_CREAT, 0644, 1);
+        free(name);
+        name = ft_strjoin("meal_sem_", ft_itoa(i));
+        philosopher[i].meal_sem = open_sem(name, O_CREAT, 0644, 1);
+        free(name);
         philosopher[i].meal_count = 0;
         philosopher[i].last_meal = 0;
+        philosopher[i].simulation_stopped = false;
     }
     return philosopher;
 }
@@ -75,28 +116,36 @@ t_program *program_init(int ac, char **av) {
     program->time_to_eat = atoi(av[3]);
     program->time_to_sleep = atoi(av[4]);
     program->number_of_times_each_philosopher_must_eat = (ac == 6) ? atoi(av[5]) : -1;
-    program->stop_sem = sem_open("stop_sem", O_CREAT, 0644, 1);
-    if (program->stop_sem == SEM_FAILED) {
-        printf("Error: Failed to create stop semaphore.\n");
-        free(program);
-        return NULL;
+    program->forks_sem = open_sem("forks_sem", O_CREAT, 0644, program->number_of_philosophers);
+    program->print_sem = open_sem("print_sem", O_CREAT, 0644, 1);
+    program->death_sem = open_sem("death_sem", O_CREAT, 0644, 0);
+    if (program->number_of_times_each_philosopher_must_eat != -1) {
+        program->philo_full_sem = open_sem("philo_full_sem", O_CREAT, 0644, 0);
+        if (program->philo_full_sem == SEM_FAILED) {
+            printf("Error: Failed to create philo_full semaphore.\n");
+            sem_close(program->forks_sem);
+            sem_close(program->print_sem);
+            sem_close(program->death_sem);
+            cleanup_semaphores();
+            free(program);
+            return NULL;
+        }
+    } else {
+        program->philo_full_sem = NULL;
     }
     program->pids = malloc(program->number_of_philosophers * sizeof(pid_t));
     if (!program->pids) {
         printf("Error: Failed to allocate memory for process IDs.\n");
-        sem_close(program->stop_sem);
         free(program);
         return NULL;
     }
     program->philosophers = philosopher_init(program);
     if (!program->philosophers) {
         printf("Error: Failed to initialize philosophers.\n");
-        sem_close(program->stop_sem);
         free(program->pids);
         free(program);
         return NULL;
     }
-    program->simulation_stopped = false;
     return program;
 }
 
@@ -106,51 +155,57 @@ long long get_time(t_program *program) {
     return ((tv.tv_sec * 1000) + (tv.tv_usec / 1000)) - program->start_time;
 }
 
-void ft_sleep(t_philosophers *philosopher, int time_ms) {
+void ft_sleep(t_philosophers *philosopher, int time_ms) 
+{
     long long start = get_time(philosopher->program);
-    while (!is_simulation_stopped(philosopher->program)) {
+    while (!is_simulation_stopped(philosopher)) 
+    {
         long long current = get_time(philosopher->program);
-        if (current - start >= time_ms) break;
+        if (current - start >= time_ms)
+            break;
         usleep(500);
     }
 }
 
-int is_simulation_stopped(t_program *program) {
-    int result;
-    sem_wait(program->stop_sem);
-    result = program->simulation_stopped;
-    sem_post(program->stop_sem);
-    return result;
-}
-
 void print_status(t_philosophers *philosopher, char *status) {
-    if (!is_simulation_stopped(philosopher->program)) {
-        sem_wait(philosopher->print_sem);
+    if (!is_simulation_stopped(philosopher)) {
+        sem_wait(philosopher->program->print_sem);
         printf("%lld %d %s\n", get_time(philosopher->program), philosopher->id + 1, status);
-        sem_post(philosopher->print_sem);
+        sem_post(philosopher->program->print_sem);
     }
 }
 
 void release_fork(t_philosophers *philosopher) {
-    sem_post(philosopher->forks_sem);
-    sem_post(philosopher->forks_sem);
+    sem_post(philosopher->program->forks_sem);
+    sem_post(philosopher->program->forks_sem);
 }
 
 void take_fork(t_philosophers *philosopher) {
-    sem_wait(philosopher->forks_sem);
+    sem_wait(philosopher->program->forks_sem);
     print_status(philosopher, "has taken a fork");
-    sem_wait(philosopher->forks_sem);
+    sem_wait(philosopher->program->forks_sem);
     print_status(philosopher, "has taken a fork");
+}
+
+bool is_simulation_stopped(t_philosophers *philosopher) 
+{
+    sem_wait(philosopher->stop_sem);
+    bool stopped = philosopher->simulation_stopped;
+    sem_post(philosopher->stop_sem);
+    return stopped;
+}
+
+void set_simulation_stopped(t_philosophers *philosopher) {
+    sem_wait(philosopher->stop_sem);
+    philosopher->simulation_stopped = true;
+    sem_post(philosopher->stop_sem);
 }
 
 void handle_single_philosopher(t_philosophers *philosopher) {
     print_status(philosopher, "has taken a fork");
     ft_sleep(philosopher, philosopher->program->time_to_die);
-    sem_wait(philosopher->program->stop_sem);
-    philosopher->program->simulation_stopped = true;
-    sem_post(philosopher->program->stop_sem);
     print_status(philosopher, "died");
-    exit(1);
+    set_simulation_stopped(philosopher);
 }
 
 void eat_sleep_think(t_philosophers *philosopher) {
@@ -166,6 +221,8 @@ void eat_sleep_think(t_philosophers *philosopher) {
     print_status(philosopher, "is sleeping");
     ft_sleep(philosopher, philosopher->program->time_to_sleep);
     print_status(philosopher, "is thinking");
+    long long time_till_death = philosopher->program->time_to_die - (get_time(philosopher->program) - philosopher->last_meal);
+    ft_sleep(philosopher, (time_till_death > 0) ? (time_till_death * 0.7) : 0);
 }
 
 void *philosopher_routine(void *arg) {
@@ -176,71 +233,72 @@ void *philosopher_routine(void *arg) {
     }
     if (philosopher->id % 2 == 0)
         ft_sleep(philosopher, philosopher->program->time_to_eat / 2);
-    while (!is_simulation_stopped(philosopher->program)) {
+    while (!is_simulation_stopped(philosopher)) {
         take_fork(philosopher);
-        if (is_simulation_stopped(philosopher->program)) {
+        if (is_simulation_stopped(philosopher)) {
             release_fork(philosopher);
             break;
         }
         eat_sleep_think(philosopher);
-        if (philosopher->program->number_of_times_each_philosopher_must_eat != -1 &&
-            philosopher->meal_count >= philosopher->program->number_of_times_each_philosopher_must_eat)
-            break;
     }
     return NULL;
 }
 
 bool check_philo_death(t_philosophers *philosopher) {
     long long current_time = get_time(philosopher->program);
-    bool is_dead = false;
-    
     sem_wait(philosopher->meal_sem);
-    if (current_time - philosopher->last_meal > philosopher->program->time_to_die) {
-        sem_post(philosopher->meal_sem);
-        
-        sem_wait(philosopher->program->stop_sem);
-        if (!philosopher->program->simulation_stopped) {
-            philosopher->program->simulation_stopped = true;
-            is_dead = true;
-        }
-        sem_post(philosopher->program->stop_sem);
-        
-        if (is_dead) {
-            sem_wait(philosopher->print_sem);
-            printf("%lld %d died\n", get_time(philosopher->program), philosopher->id + 1);
-            sem_post(philosopher->print_sem);
-            exit(1);
-        }
-        return is_dead;
-    }
+    bool is_dead = (current_time - philosopher->last_meal) > philosopher->program->time_to_die;
     sem_post(philosopher->meal_sem);
-    return false;
+    return is_dead;
+}
+
+void report_philo_death(t_philosophers *philosopher) {
+    print_status(philosopher, "died");
+    sem_post(philosopher->program->death_sem);
+    set_simulation_stopped(philosopher);
+}
+
+void kill_all_philosophers(t_program *program) {
+    for (int i = 0; i < program->number_of_philosophers; i++) {
+        kill(program->pids[i], SIGKILL);
+    }
+}
+
+bool check_eat_enough(t_philosophers *philosopher) {
+    if (philosopher->program->number_of_times_each_philosopher_must_eat == -1)
+        return false;
+    sem_wait(philosopher->meal_sem);
+    bool enough = philosopher->meal_count >= philosopher->program->number_of_times_each_philosopher_must_eat;
+    sem_post(philosopher->meal_sem);
+    return enough;
 }
 
 bool check_all_ate_enough(t_program *program) {
-    if (program->number_of_times_each_philosopher_must_eat == -1)
-        return false;
-    bool all_ate_enough = true;
-    for (int i = 0; i < program->number_of_philosophers; i++) {
-        sem_wait(program->philosophers[i].meal_sem);
-        if (program->philosophers[i].meal_count < program->number_of_times_each_philosopher_must_eat)
-            all_ate_enough = false;
-        sem_post(program->philosophers[i].meal_sem);
-        if (!all_ate_enough) break;
+    int philo_full_count = 0;
+    while (philo_full_count < program->number_of_philosophers) {
+        sem_wait(program->philo_full_sem);
+        philo_full_count++;
     }
-    if (all_ate_enough) {
-        sem_wait(program->stop_sem);
-        program->simulation_stopped = true;
-        sem_post(program->stop_sem);
-    }
-    return all_ate_enough;
+    return true;
+}
+
+void meals_monitor(t_program *program) {
+    check_all_ate_enough(program);
+    kill_all_philosophers(program);
+    sem_post(program->death_sem);
 }
 
 void *monitor_routine(void *arg) {
     t_philosophers *philosopher = (t_philosophers *)arg;
-    while (!is_simulation_stopped(philosopher->program)) {
+    while (!is_simulation_stopped(philosopher)) {
         if (check_philo_death(philosopher)) {
-            exit(1);
+            report_philo_death(philosopher);
+            return NULL;
+        }
+        if (check_eat_enough(philosopher)) {
+            sem_post(philosopher->program->philo_full_sem);
+            set_simulation_stopped(philosopher);
+            return NULL;
         }
         usleep(1000);
     }
@@ -248,17 +306,24 @@ void *monitor_routine(void *arg) {
 }
 
 void cleanup_process(t_philosophers *philosopher) {
-    sem_close(philosopher->forks_sem);
-    sem_close(philosopher->print_sem);
+    sem_close(philosopher->program->forks_sem);
+    sem_close(philosopher->program->print_sem);
+    sem_close(philosopher->program->death_sem);
+    if (philosopher->program->philo_full_sem)
+        sem_close(philosopher->program->philo_full_sem);
     sem_close(philosopher->meal_sem);
-    sem_close(philosopher->death_sem);
-    sem_close(philosopher->program->stop_sem);
+    sem_close(philosopher->stop_sem);
+    char *name = ft_strjoin("stop_sem_", ft_itoa(philosopher->id));
+    sem_unlink(name);
+    free(name);
+    name = ft_strjoin("meal_sem_", ft_itoa(philosopher->id));
+    sem_unlink(name);
+    free(name);
 }
 
 void philosopher_start(t_philosophers *philosopher) {
     pthread_t philosopher_thread, monitor_thread;
     philosopher->last_meal = get_time(philosopher->program);
-    philosopher->meal_count = 0;
     if (pthread_create(&monitor_thread, NULL, monitor_routine, philosopher) != 0 ||
         pthread_create(&philosopher_thread, NULL, philosopher_routine, philosopher) != 0) {
         printf("Error: Failed to create threads.\n");
@@ -278,49 +343,43 @@ void program_start(t_program *program) {
         program->pids[i] = fork();
         if (program->pids[i] == 0) {
             philosopher_start(&program->philosophers[i]);
+        } else if (program->pids[i] < 0) {
+            printf("Error: Failed to create child process.\n");
             exit(1);
         }
-        usleep(100);
     }
-    pid_t meal_monitor_pid = -1;
+    pid_t meals_pid = -1;
     if (program->number_of_times_each_philosopher_must_eat != -1) {
-        meal_monitor_pid = fork();
-        if (meal_monitor_pid == 0) {
-            while (!is_simulation_stopped(program)) {
-                if (check_all_ate_enough(program)) {
-                    for (int i = 0; i < program->number_of_philosophers; i++)
-                        kill(program->pids[i], SIGKILL);
-                    exit(0);
-                }
-                usleep(1000);
-            }
+        meals_pid = fork();
+        if (meals_pid == 0) {
+            meals_monitor(program);
             exit(0);
+        } else if (meals_pid < 0) {
+            printf("Error: Failed to create meals monitor process.\n");
+            exit(1);
         }
     }
-    int status;
-    pid_t exited_pid;
-    while ((exited_pid = waitpid(-1, &status, 0))) {
-        if (exited_pid == -1) break;
-        if (exited_pid == meal_monitor_pid) {
-            for (int i = 0; i < program->number_of_philosophers; i++)
-                kill(program->pids[i], SIGKILL);
-        } else if (WIFEXITED(status) && WEXITSTATUS(status) == 1) {
-            for (int i = 0; i < program->number_of_philosophers; i++)
-                if (program->pids[i] != exited_pid)
-                    kill(program->pids[i], SIGKILL);
-            if (meal_monitor_pid != -1) kill(meal_monitor_pid, SIGKILL);
-            break;
-        }
+    pid_t death_pid = fork();
+    if (death_pid == 0) {
+        sem_wait(program->death_sem);
+        kill_all_philosophers(program);
+        exit(0);
+    } else if (death_pid < 0) {
+        printf("Error: Failed to create death monitor process.\n");
+        exit(1);
     }
-    while (waitpid(-1, NULL, WNOHANG) > 0);
-    if (meal_monitor_pid != -1) {
-        kill(meal_monitor_pid, SIGKILL);
-        waitpid(meal_monitor_pid, NULL, 0);
-    }
+    while (wait(NULL) > 0)
+        ;
+    kill(meals_pid, SIGKILL);
+    kill(death_pid, SIGKILL);
 }
 
 void program_destroy(t_program *program) {
-    sem_close(program->stop_sem);
+    sem_close(program->forks_sem);
+    sem_close(program->print_sem);
+    sem_close(program->death_sem);
+    if (program->philo_full_sem)
+        sem_close(program->philo_full_sem);
     free(program->pids);
     free(program->philosophers);
     free(program);
@@ -328,9 +387,12 @@ void program_destroy(t_program *program) {
 
 int main(int ac, char **av) {
     cleanup_semaphores();
-    if (!check_arguments(ac, av)) return 0;
+    atexit(cleanup_semaphores);
+    if (!check_arguments(ac, av))
+        return 0;
     t_program *program = program_init(ac, av);
-    if (!program) return 0;
+    if (!program)
+        return 0;
     program_start(program);
     program_destroy(program);
     return 0;
