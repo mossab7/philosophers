@@ -65,7 +65,7 @@ void meals_monitor(t_program *program);
 bool check_all_ate_enough(t_program *program);
 bool check_eat_enough(t_philosophers *philosopher);
 void *monitor_routine(void *arg);
-void cleanup_process(t_philosophers *philosopher,bool executed);
+void cleanup_process(t_philosophers *philosopher,t_program *program,bool executed);
 void philosopher_start(t_philosophers *philosopher);
 void program_start(t_program *program);
 void program_destroy(t_program *program);

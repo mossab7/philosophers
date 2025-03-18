@@ -117,19 +117,14 @@ t_philosophers *philosopher_init(t_program *program)
         printf("Error: Failed to allocate memory for philosophers.\n");
         return NULL;
     }
-    char *id;
     for (int i = 0; i < program->number_of_philosophers; i++)
     {
         philosopher[i].id = i;
         philosopher[i].program = program;
-        id = ft_itoa(i);
-        philosopher[i].stop_sem_name = ft_strjoin("stop_sem_", id);
-        philosopher[i].stop_sem = open_sem(philosopher[i].stop_sem_name, O_CREAT, 0644, 1);
-        free(id);
-        id = ft_itoa(i);
-        philosopher[i].meal_sem_name = ft_strjoin("meal_sem_", id);
-        philosopher[i].meal_sem = open_sem(philosopher[i].meal_sem_name, O_CREAT, 0644, 1);
-        free(id);
+        philosopher[i].stop_sem_name = NULL;
+        philosopher[i].meal_sem_name = NULL;
+        philosopher[i].stop_sem = NULL;  
+        philosopher[i].meal_sem = NULL;  
         philosopher[i].meal_count = 0;
         philosopher[i].last_meal = 0;
         philosopher[i].simulation_stopped = false;
@@ -389,28 +384,33 @@ void *monitor_routine(void *arg)
     return NULL;
 }
 
-void cleanup_process(t_philosophers *philosopher, bool executed)
+void cleanup_process(t_philosophers *philosopher, t_program *program,bool executed)
 {
+    if (philosopher->stop_sem)
+    {
+        sem_close(philosopher->stop_sem);
+        sem_unlink(philosopher->stop_sem_name);
+    }
+    if (philosopher->meal_sem)
+    {
+        sem_close(philosopher->meal_sem);
+        sem_unlink(philosopher->meal_sem_name);
+    }
+    free(philosopher->stop_sem_name);
+    free(philosopher->meal_sem_name);
     sem_close(philosopher->program->forks_sem);
     sem_close(philosopher->program->print_sem);
     sem_close(philosopher->program->death_sem);
     if (philosopher->program->philo_full_sem)
         sem_close(philosopher->program->philo_full_sem);
-    sem_close(philosopher->meal_sem);
-    sem_close(philosopher->stop_sem);
-    sem_unlink(philosopher->stop_sem_name);
-    sem_unlink(philosopher->meal_sem_name);
-    free(philosopher->stop_sem_name);
-    free(philosopher->meal_sem_name);
-    if (executed == true)
+
+    if (executed)
     {
-        if (philosopher->program->pids)
-            free(philosopher->program->pids);  
-        if (philosopher->program)
-            free(philosopher->program);  
+        free(program->pids);
+        free(program->philosophers);
+        free(program);
     }
 }
-
 void *death_listener_routine(void *arg)
 {
     t_philosophers *philosopher = (t_philosophers *)arg;
@@ -421,23 +421,35 @@ void *death_listener_routine(void *arg)
 
 void philosopher_start(t_philosophers *philosopher)
 {
+    char *id = ft_itoa(philosopher->id);
+    philosopher->stop_sem_name = ft_strjoin("stop_sem_", id);
+    philosopher->meal_sem_name = ft_strjoin("meal_sem_", id);
+    free(id);
+    philosopher->stop_sem = open_sem(philosopher->stop_sem_name, O_CREAT, 0644, 1);
+    philosopher->meal_sem = open_sem(philosopher->meal_sem_name, O_CREAT, 0644, 1);
+    if (!philosopher->stop_sem || !philosopher->meal_sem)
+    {
+        printf("Error: Failed to create philosopher semaphores.\n");
+        cleanup_process(philosopher,philosopher->program, false);
+        exit(1);
+    }
+
     pthread_t philosopher_thread, monitor_thread, death_listener_thread;
     philosopher->last_meal = get_time(philosopher->program);
     if (pthread_create(&monitor_thread, NULL, monitor_routine, philosopher) != 0 ||
-    pthread_create(&philosopher_thread, NULL, philosopher_routine, philosopher) != 0 ||
-    pthread_create(&death_listener_thread, NULL, death_listener_routine, philosopher) != 0)
+        pthread_create(&philosopher_thread, NULL, philosopher_routine, philosopher) != 0 ||
+        pthread_create(&death_listener_thread, NULL, death_listener_routine, philosopher) != 0)
     {
         printf("Error: Failed to create thread.\n");
-        cleanup_process(philosopher,false);
+        cleanup_process(philosopher,philosopher->program, false);
         exit(1);
     }
     pthread_join(philosopher_thread, NULL);
     pthread_join(monitor_thread, NULL);
     pthread_join(death_listener_thread, NULL);
-    cleanup_process(philosopher,true);
+    cleanup_process(philosopher,philosopher->program, true);
     exit(0);
 }
-
 void program_start(t_program *program)
 {
     struct timeval tv;
