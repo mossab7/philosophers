@@ -38,6 +38,8 @@ struct s_philosophers
     t_program *program;
     sem_t *stop_sem;
     sem_t *meal_sem;
+    char *stop_sem_name;
+    char *meal_sem_name;
     int meal_count;
     long long last_meal;
     bool simulation_stopped;
@@ -63,7 +65,7 @@ void meals_monitor(t_program *program);
 bool check_all_ate_enough(t_program *program);
 bool check_eat_enough(t_philosophers *philosopher);
 void *monitor_routine(void *arg);
-void cleanup_process(t_philosophers *philosopher);
+void cleanup_process(t_philosophers *philosopher,bool executed);
 void philosopher_start(t_philosophers *philosopher);
 void program_start(t_program *program);
 void program_destroy(t_program *program);

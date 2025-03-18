@@ -97,21 +97,16 @@ sem_t *open_sem(char *name, int oflag, mode_t mode, unsigned int value)
 
 void cleanup_semaphores(t_program *program) 
 {
+    sem_close(program->forks_sem);
+    sem_close(program->print_sem);
+    sem_close(program->death_sem);
+    if (program->philo_full_sem)
+        sem_close(program->philo_full_sem);
+    
     sem_unlink("forks_sem");
     sem_unlink("print_sem");
     sem_unlink("death_sem");
     sem_unlink("philo_full_sem");
-    for (int i = 0; i < program->number_of_philosophers; i++) 
-    {
-        char *id = ft_itoa(i);
-        char *stop_name = ft_strjoin("stop_sem_", id);
-        char *meal_name = ft_strjoin("meal_sem_", id);
-        sem_unlink(stop_name);
-        sem_unlink(meal_name);
-        free(id);
-        free(stop_name);
-        free(meal_name);
-    }
 }
 
 t_philosophers *philosopher_init(t_program *program)
@@ -122,21 +117,18 @@ t_philosophers *philosopher_init(t_program *program)
         printf("Error: Failed to allocate memory for philosophers.\n");
         return NULL;
     }
-    char *name;
     char *id;
     for (int i = 0; i < program->number_of_philosophers; i++)
     {
         philosopher[i].id = i;
         philosopher[i].program = program;
         id = ft_itoa(i);
-        name = ft_strjoin("stop_sem_", id);
-        philosopher[i].stop_sem = open_sem(name, O_CREAT, 0644, 1);
-        free(name);
+        philosopher[i].stop_sem_name = ft_strjoin("stop_sem_", id);
+        philosopher[i].stop_sem = open_sem(philosopher[i].stop_sem_name, O_CREAT, 0644, 1);
         free(id);
         id = ft_itoa(i);
-        name = ft_strjoin("meal_sem_", id);
-        philosopher[i].meal_sem = open_sem(name, O_CREAT, 0644, 1);
-        free(name);
+        philosopher[i].meal_sem_name = ft_strjoin("meal_sem_", id);
+        philosopher[i].meal_sem = open_sem(philosopher[i].meal_sem_name, O_CREAT, 0644, 1);
         free(id);
         philosopher[i].meal_count = 0;
         philosopher[i].last_meal = 0;
@@ -361,6 +353,19 @@ void meals_monitor(t_program *program)
 {
     check_all_ate_enough(program);
     signal_death(program);
+    
+    // Clean up all resources before exiting
+    sem_close(program->forks_sem);
+    sem_close(program->print_sem);
+    sem_close(program->death_sem);
+    if (program->philo_full_sem)
+        sem_close(program->philo_full_sem);
+    
+    free(program->pids);
+    free(program->philosophers);
+    free(program);
+    
+    exit(0);
 }
 
 void *monitor_routine(void *arg)
@@ -384,11 +389,8 @@ void *monitor_routine(void *arg)
     return NULL;
 }
 
-void cleanup_process(t_philosophers *philosopher)
+void cleanup_process(t_philosophers *philosopher, bool executed)
 {
-    char *name;
-    char *id;
-
     sem_close(philosopher->program->forks_sem);
     sem_close(philosopher->program->print_sem);
     sem_close(philosopher->program->death_sem);
@@ -396,14 +398,17 @@ void cleanup_process(t_philosophers *philosopher)
         sem_close(philosopher->program->philo_full_sem);
     sem_close(philosopher->meal_sem);
     sem_close(philosopher->stop_sem);
-    id = ft_itoa(philosopher->id);
-    name = ft_strjoin("stop_sem_", id);
-    sem_unlink(name);
-    free(name);
-    name = ft_strjoin("meal_sem_", id);
-    sem_unlink(name);
-    free(name);
-    free(id); 
+    sem_unlink(philosopher->stop_sem_name);
+    sem_unlink(philosopher->meal_sem_name);
+    free(philosopher->stop_sem_name);
+    free(philosopher->meal_sem_name);
+    if (executed == true)
+    {
+        if (philosopher->program->pids)
+            free(philosopher->program->pids);  
+        if (philosopher->program)
+            free(philosopher->program);  
+    }
 }
 
 void *death_listener_routine(void *arg)
@@ -423,13 +428,13 @@ void philosopher_start(t_philosophers *philosopher)
     pthread_create(&death_listener_thread, NULL, death_listener_routine, philosopher) != 0)
     {
         printf("Error: Failed to create thread.\n");
-        cleanup_process(philosopher);
+        cleanup_process(philosopher,false);
         exit(1);
     }
     pthread_join(philosopher_thread, NULL);
     pthread_join(monitor_thread, NULL);
     pthread_join(death_listener_thread, NULL);
-    cleanup_process(philosopher);
+    cleanup_process(philosopher,true);
     exit(0);
 }
 
@@ -463,18 +468,22 @@ void program_start(t_program *program)
             meals_monitor(program);
             exit(0);
         }
-        else if (meals_pid < 0)
-        {
+        if (meals_pid < 0) {
             printf("Error: Failed to create meals monitor process.\n");
+            for (int i = 0; i < program->number_of_philosophers; i++)
+                kill(program->pids[i], SIGTERM);
+            program_destroy(program);
             exit(1);
         }
     }
     for (int i = 0; i < program->number_of_philosophers; i++)
         waitpid(program->pids[i], NULL, 0);
-    if(program->number_of_times_each_philosopher_must_eat != -1)
-        kill(meals_pid, SIGKILL);
+    if (program->number_of_times_each_philosopher_must_eat != -1 && meals_pid > 0)
+    {
+        kill(meals_pid, SIGTERM);
+        waitpid(meals_pid, NULL, 0);
+    }
 }
-
 void program_destroy(t_program *program) 
 {
     sem_close(program->forks_sem);
@@ -482,7 +491,17 @@ void program_destroy(t_program *program)
     sem_close(program->death_sem);
     if (program->philo_full_sem)
         sem_close(program->philo_full_sem);
+    
+    for (int i = 0; i < program->number_of_philosophers; i++) 
+    {
+        sem_close(program->philosophers[i].stop_sem);
+        sem_close(program->philosophers[i].meal_sem);
+        free(program->philosophers[i].stop_sem_name);
+        free(program->philosophers[i].meal_sem_name);
+    }
+    
     cleanup_semaphores(program);
+    
     free(program->pids);
     free(program->philosophers);
     free(program);
