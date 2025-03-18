@@ -12,8 +12,10 @@
 
 #include "philosopher.h"
 
-void eat_sleep_think(t_philosophers *philosopher)
+void	eat_sleep_think(t_philosophers *philosopher)
 {
+	long long	time_till_death;
+
 	sem_wait(philosopher->meal_sem);
 	philosopher->last_meal = get_time(philosopher->program);
 	sem_post(philosopher->meal_sem);
@@ -26,6 +28,7 @@ void eat_sleep_think(t_philosophers *philosopher)
 	print_status(philosopher, "is sleeping");
 	ft_sleep(philosopher, philosopher->program->time_to_sleep);
 	print_status(philosopher, "is thinking");
-	long long time_till_death = philosopher->program->time_to_die - (get_time(philosopher->program) - philosopher->last_meal);
+	time_till_death = philosopher->program->time_to_die
+		- (get_time(philosopher->program) - philosopher->last_meal);
 	ft_sleep(philosopher, (time_till_death > 0) ? (time_till_death * 0.7) : 0);
 }

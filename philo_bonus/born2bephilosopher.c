@@ -12,26 +12,30 @@
 
 #include "philosopher.h"
 
-void philosopher_start(t_philosophers *philosopher)
+void	philosopher_start(t_philosophers *philosopher)
 {
-	char *id = ft_itoa(philosopher->id);
+	char	*id;
+
+	id = ft_itoa(philosopher->id);
 	philosopher->stop_sem_name = ft_strjoin("stop_sem_", id);
 	philosopher->meal_sem_name = ft_strjoin("meal_sem_", id);
 	free(id);
-	philosopher->stop_sem = open_sem(philosopher->stop_sem_name, O_CREAT, 0644, 1);
-	philosopher->meal_sem = open_sem(philosopher->meal_sem_name, O_CREAT, 0644, 1);
+	philosopher->stop_sem = open_sem(philosopher->stop_sem_name, O_CREAT, 0644,
+			1);
+	philosopher->meal_sem = open_sem(philosopher->meal_sem_name, O_CREAT, 0644,
+			1);
 	if (!philosopher->stop_sem || !philosopher->meal_sem)
 	{
 		printf("Error: Failed to create philosopher semaphores.\n");
 		cleanup_process(philosopher, philosopher->program, false);
 		exit(1);
 	}
-
 	pthread_t philosopher_thread, monitor_thread, death_listener_thread;
 	philosopher->last_meal = get_time(philosopher->program);
-	if (pthread_create(&monitor_thread, NULL, monitor_routine, philosopher) != 0 ||
-		pthread_create(&philosopher_thread, NULL, philosopher_routine, philosopher) != 0 ||
-		pthread_create(&death_listener_thread, NULL, death_listener_routine, philosopher) != 0)
+	if (pthread_create(&monitor_thread, NULL, monitor_routine, philosopher) != 0
+		|| pthread_create(&philosopher_thread, NULL, philosopher_routine,
+			philosopher) != 0 || pthread_create(&death_listener_thread, NULL,
+			death_listener_routine, philosopher) != 0)
 	{
 		printf("Error: Failed to create thread.\n");
 		cleanup_process(philosopher, philosopher->program, false);
@@ -43,9 +47,11 @@ void philosopher_start(t_philosophers *philosopher)
 	cleanup_process(philosopher, philosopher->program, true);
 	exit(0);
 }
-void program_start(t_program *program)
+void	program_start(t_program *program)
 {
-	struct timeval tv;
+	struct timeval	tv;
+	pid_t			meals_pid;
+
 	gettimeofday(&tv, NULL);
 	program->start_time = (tv.tv_sec * 1000) + (tv.tv_usec / 1000);
 	for (int i = 0; i < program->number_of_philosophers; i++)
@@ -64,7 +70,7 @@ void program_start(t_program *program)
 			exit(1);
 		}
 	}
-	pid_t meals_pid = -1;
+	meals_pid = -1;
 	if (program->number_of_times_each_philosopher_must_eat != -1)
 	{
 		meals_pid = fork();
@@ -84,7 +90,8 @@ void program_start(t_program *program)
 	}
 	for (int i = 0; i < program->number_of_philosophers; i++)
 		waitpid(program->pids[i], NULL, 0);
-	if (program->number_of_times_each_philosopher_must_eat != -1 && meals_pid > 0)
+	if (program->number_of_times_each_philosopher_must_eat != -1
+		&& meals_pid > 0)
 	{
 		kill(meals_pid, SIGTERM);
 		waitpid(meals_pid, NULL, 0);

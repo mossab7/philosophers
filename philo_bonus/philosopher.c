@@ -12,7 +12,7 @@
 
 #include "philosopher.h"
 
-void handle_single_philosopher(t_philosophers *philosopher)
+void	handle_single_philosopher(t_philosophers *philosopher)
 {
 	print_status(philosopher, "has taken a fork");
 	ft_sleep(philosopher, philosopher->program->time_to_die);
@@ -20,13 +20,15 @@ void handle_single_philosopher(t_philosophers *philosopher)
 	set_simulation_stopped(philosopher);
 }
 
-void *philosopher_routine(void *arg)
+void	*philosopher_routine(void *arg)
 {
-	t_philosophers *philosopher = (t_philosophers *)arg;
+	t_philosophers	*philosopher;
+
+	philosopher = (t_philosophers *)arg;
 	if (philosopher->program->number_of_philosophers == 1)
 	{
 		handle_single_philosopher(philosopher);
-		return NULL;
+		return (NULL);
 	}
 	if (philosopher->id % 2 == 0)
 		ft_sleep(philosopher, philosopher->program->time_to_eat / 2);
@@ -36,9 +38,9 @@ void *philosopher_routine(void *arg)
 		if (is_simulation_stopped(philosopher))
 		{
 			release_fork(philosopher);
-			break;
+			break ;
 		}
 		eat_sleep_think(philosopher);
 	}
-	return NULL;
+	return (NULL);
 }

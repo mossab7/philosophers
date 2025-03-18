@@ -12,23 +12,25 @@
 
 #include "philosopher.h"
 
-void *monitor_routine(void *arg)
+void	*monitor_routine(void *arg)
 {
-	t_philosophers *philosopher = (t_philosophers *)arg;
+	t_philosophers	*philosopher;
+
+	philosopher = (t_philosophers *)arg;
 	while (!is_simulation_stopped(philosopher))
 	{
 		if (check_philo_death(philosopher))
 		{
 			report_philo_death(philosopher);
-			return NULL;
+			return (NULL);
 		}
 		if (check_eat_enough(philosopher))
 		{
 			sem_post(philosopher->program->philo_full_sem);
 			set_simulation_stopped(philosopher);
-			return NULL;
+			return (NULL);
 		}
 		usleep(1000);
 	}
-	return NULL;
+	return (NULL);
 }

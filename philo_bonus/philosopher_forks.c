@@ -12,13 +12,13 @@
 
 #include "philosopher.h"
 
-void release_fork(t_philosophers *philosopher)
+void	release_fork(t_philosophers *philosopher)
 {
 	sem_post(philosopher->program->forks_sem);
 	sem_post(philosopher->program->forks_sem);
 }
 
-void take_fork(t_philosophers *philosopher)
+void	take_fork(t_philosophers *philosopher)
 {
 	sem_wait(philosopher->program->forks_sem);
 	print_status(philosopher, "has taken a fork");

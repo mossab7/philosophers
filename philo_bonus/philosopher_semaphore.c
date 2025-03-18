@@ -12,14 +12,16 @@
 
 #include "philosopher.h"
 
-sem_t *open_sem(char *name, int oflag, mode_t mode, unsigned int value)
+sem_t	*open_sem(char *name, int oflag, mode_t mode, unsigned int value)
 {
+	sem_t	*sem;
+
 	sem_unlink(name);
-	sem_t *sem = sem_open(name, oflag, mode, value);
+	sem = sem_open(name, oflag, mode, value);
 	if (sem == SEM_FAILED)
 	{
 		printf("Error: Failed to create %s semaphore.\n", name);
-		return NULL;
+		return (NULL);
 	}
-	return sem;
+	return (sem);
 }

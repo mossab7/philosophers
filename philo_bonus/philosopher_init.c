@@ -12,14 +12,16 @@
 
 #include "philosopher.h"
 
-
-t_philosophers *philosopher_init(t_program *program)
+t_philosophers	*philosopher_init(t_program *program)
 {
-	t_philosophers *philosopher = malloc(sizeof(t_philosophers) * program->number_of_philosophers);
+	t_philosophers	*philosopher;
+
+	philosopher = malloc(sizeof(t_philosophers)
+			* program->number_of_philosophers);
 	if (!philosopher)
 	{
 		printf("Error: Failed to allocate memory for philosophers.\n");
-		return NULL;
+		return (NULL);
 	}
 	for (int i = 0; i < program->number_of_philosophers; i++)
 	{
@@ -33,23 +35,26 @@ t_philosophers *philosopher_init(t_program *program)
 		philosopher[i].last_meal = 0;
 		philosopher[i].simulation_stopped = false;
 	}
-	return philosopher;
+	return (philosopher);
 }
 
-t_program *program_init(int ac, char **av)
+t_program	*program_init(int ac, char **av)
 {
-	t_program *program = malloc(sizeof(t_program));
+	t_program	*program;
+
+	program = malloc(sizeof(t_program));
 	if (!program)
 	{
 		printf("Error: Failed to allocate memory for program.\n");
-		return NULL;
+		return (NULL);
 	}
 	program->number_of_philosophers = atoi(av[1]);
 	program->time_to_die = atoi(av[2]);
 	program->time_to_eat = atoi(av[3]);
 	program->time_to_sleep = atoi(av[4]);
 	program->number_of_times_each_philosopher_must_eat = (ac == 6) ? atoi(av[5]) : -1;
-	program->forks_sem = open_sem("forks_sem", O_CREAT, 0644, program->number_of_philosophers);
+	program->forks_sem = open_sem("forks_sem", O_CREAT, 0644,
+			program->number_of_philosophers);
 	program->print_sem = open_sem("print_sem", O_CREAT, 0644, 1);
 	program->death_sem = open_sem("death_sem", O_CREAT, 0644, 0);
 	if (program->number_of_times_each_philosopher_must_eat != -1)
@@ -63,7 +68,7 @@ t_program *program_init(int ac, char **av)
 			sem_close(program->death_sem);
 			cleanup_semaphores(program);
 			free(program);
-			return NULL;
+			return (NULL);
 		}
 	}
 	else
@@ -80,7 +85,7 @@ t_program *program_init(int ac, char **av)
 		if (program->philo_full_sem)
 			sem_close(program->philo_full_sem);
 		free(program);
-		return NULL;
+		return (NULL);
 	}
 	program->philosophers = philosopher_init(program);
 	if (!program->philosophers)
@@ -93,7 +98,7 @@ t_program *program_init(int ac, char **av)
 			sem_close(program->philo_full_sem);
 		free(program->pids);
 		free(program);
-		return NULL;
+		return (NULL);
 	}
-	return program;
+	return (program);
 }

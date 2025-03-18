@@ -12,15 +12,17 @@
 
 #include "philosopher.h"
 
-bool is_simulation_stopped(t_philosophers *philosopher)
+bool	is_simulation_stopped(t_philosophers *philosopher)
 {
+	bool	stopped;
+
 	sem_wait(philosopher->stop_sem);
-	bool stopped = philosopher->simulation_stopped;
+	stopped = philosopher->simulation_stopped;
 	sem_post(philosopher->stop_sem);
-	return stopped;
+	return (stopped);
 }
 
-void set_simulation_stopped(t_philosophers *philosopher)
+void	set_simulation_stopped(t_philosophers *philosopher)
 {
 	sem_wait(philosopher->stop_sem);
 	philosopher->simulation_stopped = true;
