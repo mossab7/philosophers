@@ -67,10 +67,12 @@ void cleanup_process(t_philosophers *philosopher);
 void philosopher_start(t_philosophers *philosopher);
 void program_start(t_program *program);
 void program_destroy(t_program *program);
-void cleanup_semaphores();
+void cleanup_semaphores(t_program *program);
 sem_t *open_sem(char *name, int oflag, mode_t mode, unsigned int value);
 bool is_simulation_stopped(t_philosophers *philosopher);
 char *ft_itoa(int n);
 char *ft_strjoin(char *s1, char *s2);
+void signal_death(t_program *program);
+
 
 #endif
