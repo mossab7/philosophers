@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   philosopher.h                                      :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: mbouhia <marvin@42.fr>                     +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/03/18 04:56:09 by mbouhia           #+#    #+#             */
+/*   Updated: 2025/03/18 04:56:10 by mbouhia          ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #ifndef PHILOSOPHER_H
 #define PHILOSOPHER_H
 
@@ -12,11 +24,12 @@
 #include <signal.h>
 #include <stdbool.h>
 #include <string.h>
+#include <signal.h>
 
 typedef struct s_philosophers t_philosophers;
 typedef struct s_program t_program;
 
-struct s_program 
+struct s_program
 {
     int number_of_philosophers;
     int time_to_die;
@@ -32,7 +45,7 @@ struct s_program
     long long start_time;
 };
 
-struct s_philosophers 
+struct s_philosophers
 {
     int id;
     t_program *program;
@@ -60,7 +73,6 @@ void eat_sleep_think(t_philosophers *philosopher);
 void *philosopher_routine(void *arg);
 bool check_philo_death(t_philosophers *philosopher);
 void report_philo_death(t_philosophers *philosopher);
-void kill_all_philosophers(t_program *program);
 void meals_monitor(t_program *program);
 bool check_all_ate_enough(t_program *program);
 bool check_eat_enough(t_philosophers *philosopher);
@@ -75,6 +87,7 @@ bool is_simulation_stopped(t_philosophers *philosopher);
 char *ft_itoa(int n);
 char *ft_strjoin(char *s1, char *s2);
 void signal_death(t_program *program);
+void *death_listener_routine(void *arg);
 
 
 #endif
