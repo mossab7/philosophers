@@ -12,18 +12,13 @@
 
 #include "philosopher.h"
 
-bool	check_arguments(int ac, char **av)
+bool	parse_arguments(int ac, char **av)
 {
+	int	i;
 	int	j;
 
-	if (ac < 5 || ac > 6)
-	{
-		printf("Usage:\
-			%s number_of_philosophers time_to_die time_to_eat time_to_sleep [number_of_times_each_philosopher_must_eat]\n",
-			av[0]);
-		return (false);
-	}
-	for (int i = 1; i < ac; i++)
+	i = 1;
+	while (i < ac)
 	{
 		j = 0;
 		while (av[i][j])
@@ -37,10 +32,30 @@ bool	check_arguments(int ac, char **av)
 		}
 		if (atoi(av[i]) <= 0)
 		{
-			printf("Error: Arguments must be positive integers greater than zero.\n");
+			printf("Error:\
+			 Arguments must be positive integers greater than zero.\n");
 			return (false);
 		}
+		i++;
 	}
+	return (true);
+}
+
+bool	check_arguments(int ac, char **av)
+{
+	int	j;
+	int	i;
+
+	if (ac < 5 || ac > 6)
+	{
+		printf("Usage:\
+			%s number_of_philosophers time_to_die time_to_eat time_to_sleep\
+			 [number_of_times_each_philosopher_must_eat]\n",
+			av[0]);
+		return (false);
+	}
+	if (parse_arguments(ac, av) == false)
+		return (false);
 	return (true);
 }
 

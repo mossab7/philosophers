@@ -20,8 +20,11 @@ char	*ft_itoa(int n)
 
 	len = 1;
 	tmp = n;
-	while (tmp /= 10)
+	while (tmp)
+	{
+		tmp /= 10;
 		len++;
+	}
 	str = malloc(len + 1);
 	if (!str)
 		return (NULL);

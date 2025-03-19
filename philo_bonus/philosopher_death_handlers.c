@@ -34,8 +34,14 @@ void	report_philo_death(t_philosophers *philosopher)
 
 void	signal_death(t_program *program)
 {
-	for (int i = 0; i < program->number_of_philosophers; i++)
+	int	i;
+
+	i = 0;
+	while (i < program->number_of_philosophers)
+	{
 		sem_post(program->death_sem);
+		i++;
+	}
 }
 
 void	*death_listener_routine(void *arg)

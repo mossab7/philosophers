@@ -16,8 +16,7 @@ void	handle_single_philosopher(t_philosophers *philosopher)
 {
 	print_status(philosopher, "has taken a fork");
 	ft_sleep(philosopher, philosopher->program->time_to_die);
-	print_status(philosopher, "died");
-	set_simulation_stopped(philosopher);
+	report_philo_death(philosopher);
 }
 
 void	*philosopher_routine(void *arg)

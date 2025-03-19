@@ -19,7 +19,8 @@ bool	check_eat_enough(t_philosophers *philosopher)
 	if (philosopher->program->number_of_times_each_philosopher_must_eat == -1)
 		return (false);
 	sem_wait(philosopher->meal_sem);
-	enough = philosopher->meal_count >= philosopher->program->number_of_times_each_philosopher_must_eat;
+	enough = philosopher->meal_count >= philosopher->program->\
+	number_of_times_each_philosopher_must_eat;
 	sem_post(philosopher->meal_sem);
 	return (enough);
 }

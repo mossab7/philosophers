@@ -15,6 +15,7 @@
 t_philosophers	*philosopher_init(t_program *program)
 {
 	t_philosophers	*philosopher;
+	int				i;
 
 	philosopher = malloc(sizeof(t_philosophers)
 			* program->number_of_philosophers);
@@ -23,7 +24,8 @@ t_philosophers	*philosopher_init(t_program *program)
 		printf("Error: Failed to allocate memory for philosophers.\n");
 		return (NULL);
 	}
-	for (int i = 0; i < program->number_of_philosophers; i++)
+	i = 0;
+	while (i < program->number_of_philosophers)
 	{
 		philosopher[i].id = i;
 		philosopher[i].program = program;
@@ -34,17 +36,21 @@ t_philosophers	*philosopher_init(t_program *program)
 		philosopher[i].meal_count = 0;
 		philosopher[i].last_meal = 0;
 		philosopher[i].simulation_stopped = false;
+		i++;
 	}
 	return (philosopher);
 }
 
-bool construct_program(t_program *program,int ac,char **av)
+bool	construct_program(t_program *program, int ac, char **av)
 {
 	program->number_of_philosophers = atoi(av[1]);
 	program->time_to_die = atoi(av[2]);
 	program->time_to_eat = atoi(av[3]);
 	program->time_to_sleep = atoi(av[4]);
-	program->number_of_times_each_philosopher_must_eat = (ac == 6) ? atoi(av[5]) : -1;
+	if (ac == 6)
+		program->number_of_times_each_philosopher_must_eat = atoi(av[5]);
+	else
+		program->number_of_times_each_philosopher_must_eat = -1;
 	program->forks_sem = open_sem("forks_sem", O_CREAT, 0644,
 			program->number_of_philosophers);
 	program->print_sem = open_sem("print_sem", O_CREAT, 0644, 1);
@@ -70,7 +76,7 @@ bool construct_program(t_program *program,int ac,char **av)
 	return (true);
 }
 
-bool construct_pids(t_program *program)
+bool	construct_pids(t_program *program)
 {
 	program->pids = malloc(program->number_of_philosophers * sizeof(pid_t));
 	if (!program->pids)
@@ -97,7 +103,7 @@ t_program	*program_init(int ac, char **av)
 		printf("Error: Failed to allocate memory for program.\n");
 		return (NULL);
 	}
-	if (!construct_program(program,ac,av))
+	if (!construct_program(program, ac, av))
 		return (NULL);
 	if (!construct_pids(program))
 		return (NULL);

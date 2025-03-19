@@ -30,5 +30,6 @@ void	eat_sleep_think(t_philosophers *philosopher)
 	print_status(philosopher, "is thinking");
 	time_till_death = philosopher->program->time_to_die
 		- (get_time(philosopher->program) - philosopher->last_meal);
-	ft_sleep(philosopher, (time_till_death > 0) ? (time_till_death * 0.7) : 0);
+	if (time_till_death > 0)
+		ft_sleep(philosopher, (time_till_death * 0.7));
 }

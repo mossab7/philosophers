@@ -14,17 +14,21 @@
 
 void	program_destroy(t_program *program)
 {
+	int	i;
+
 	sem_close(program->forks_sem);
 	sem_close(program->print_sem);
 	sem_close(program->death_sem);
 	if (program->philo_full_sem)
 		sem_close(program->philo_full_sem);
-	for (int i = 0; i < program->number_of_philosophers; i++)
+	i = 0;
+	while (i < program->number_of_philosophers)
 	{
 		sem_close(program->philosophers[i].stop_sem);
 		sem_close(program->philosophers[i].meal_sem);
 		free(program->philosophers[i].stop_sem_name);
 		free(program->philosophers[i].meal_sem_name);
+		i++;
 	}
 	cleanup_semaphores(program);
 	free(program->pids);

@@ -12,8 +12,7 @@
 
 #include "philosopher.h"
 
-
-void open_local_semaphores(t_philosophers *philosopher)
+void	open_local_semaphores(t_philosophers *philosopher)
 {
 	char	*id;
 
@@ -35,10 +34,10 @@ void open_local_semaphores(t_philosophers *philosopher)
 
 void	philosopher_start(t_philosophers *philosopher)
 {
-	pthread_t philosopher_thread;
-	pthread_t monitor_thread;
-	pthread_t death_listener_thread;
-	
+	pthread_t	philosopher_thread;
+	pthread_t	monitor_thread;
+	pthread_t	death_listener_thread;
+
 	open_local_semaphores(philosopher);
 	philosopher->last_meal = get_time(philosopher->program);
 	if (pthread_create(&monitor_thread, NULL, monitor_routine, philosopher) != 0
@@ -57,39 +56,39 @@ void	philosopher_start(t_philosophers *philosopher)
 	exit(0);
 }
 
-void creat_philosophers(t_program *program)
+void	creat_philosophers(t_program *program)
 {
-	int i;
-	int j;
-    struct timeval	tv;
+	int				i;
+	int				j;
+	struct timeval	tv;
 
 	i = 0;
 	gettimeofday(&tv, NULL);
-    program->start_time = (tv.tv_sec * 1000) + (tv.tv_usec / 1000);
-    while (i < program->number_of_philosophers)
-    {
-        program->pids[i] = fork();
-        if (program->pids[i] == 0)
-        {
-            philosopher_start(&program->philosophers[i]);
-        }
-        else if (program->pids[i] < 0)
-        {
-            printf("Error: Failed to create child process.\n");
-            j = 0;
-            while (j < i)
-            {
-                kill(program->pids[j], SIGTERM);
-                j++;
-            }
-            program_destroy(program);
-            exit(1);
-        }
-        i++;
-    }
+	program->start_time = (tv.tv_sec * 1000) + (tv.tv_usec / 1000);
+	while (i < program->number_of_philosophers)
+	{
+		program->pids[i] = fork();
+		if (program->pids[i] == 0)
+		{
+			philosopher_start(&program->philosophers[i]);
+		}
+		else if (program->pids[i] < 0)
+		{
+			printf("Error: Failed to create child process.\n");
+			j = 0;
+			while (j < i)
+			{
+				kill(program->pids[j], SIGTERM);
+				j++;
+			}
+			program_destroy(program);
+			exit(1);
+		}
+		i++;
+	}
 }
 
-pid_t create_meals_monitor(t_program *program)
+pid_t	create_meals_monitor(t_program *program)
 {
 	pid_t	meals_pid;
 	int		i;
@@ -117,26 +116,25 @@ pid_t create_meals_monitor(t_program *program)
 
 void	program_start(t_program *program)
 {
-    pid_t			meals_pid;
-    int				i;
-
+	pid_t meals_pid;
+	int i;
 
 	creat_philosophers(program);
-    meals_pid = -1;
-    if (program->number_of_times_each_philosopher_must_eat != -1)
-    {
+	meals_pid = -1;
+	if (program->number_of_times_each_philosopher_must_eat != -1)
+	{
 		meals_pid = create_meals_monitor(program);
-    }
-    i = 0;
-    while (i < program->number_of_philosophers)
-    {
-        waitpid(program->pids[i], NULL, 0);
-        i++;
-    }
-    if (program->number_of_times_each_philosopher_must_eat != -1
-        && meals_pid > 0)
-    {
-        kill(meals_pid, SIGTERM);
-        waitpid(meals_pid, NULL, 0);
-    }
+	}
+	i = 0;
+	while (i < program->number_of_philosophers)
+	{
+		waitpid(program->pids[i], NULL, 0);
+		i++;
+	}
+	if (program->number_of_times_each_philosopher_must_eat != -1
+		&& meals_pid > 0)
+	{
+		kill(meals_pid, SIGTERM);
+		waitpid(meals_pid, NULL, 0);
+	}
 }
