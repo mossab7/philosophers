@@ -16,6 +16,8 @@ void	handle_single_philosopher(t_philosophers *philosopher)
 {
 	print_status(philosopher, "has taken a fork");
 	ft_sleep(philosopher, philosopher->program->time_to_die);
+	if(philosopher->program->number_of_times_each_philosopher_must_eat != -1)
+		sem_post(philosopher->program->philo_full_sem);
 	report_philo_death(philosopher);
 }
 

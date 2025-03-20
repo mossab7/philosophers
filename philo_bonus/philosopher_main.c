@@ -43,9 +43,6 @@ bool	parse_arguments(int ac, char **av)
 
 bool	check_arguments(int ac, char **av)
 {
-	int	j;
-	int	i;
-
 	if (ac < 5 || ac > 6)
 	{
 		printf("Usage:\

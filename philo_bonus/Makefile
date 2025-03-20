@@ -1,5 +1,5 @@
 CC = cc -g -O3 
-NAME = philosophers
+NAME = philo_bonus
 FLAGS = -Wall -Wextra -Werror
 SRC = philosopher.c philosopher_utils.c philosopher_launcher.c philosopher_semaphore.c philosopher_operations.c \
 	philosopher_monitor_routine.c philosopher_meals_monitor.c philosopher_main.c philosopher_init.c philosopher_forks.c \
