@@ -1,7 +1,7 @@
-CC = cc -g -O3
+CC = cc -g -O3 
 NAME = philosophers
 FLAGS = -Wall -Wextra -Werror
-SRC = philosopher.c philosopher_utils.c born2bephilosopher.c philosopher_semaphore.c philosopher_operations.c \
+SRC = philosopher.c philosopher_utils.c philosopher_launcher.c philosopher_semaphore.c philosopher_operations.c \
 	philosopher_monitor_routine.c philosopher_meals_monitor.c philosopher_main.c philosopher_init.c philosopher_forks.c \
 		philosopher_flow_control.c philosopher_death_handlers.c philosopher_cleanup.c
 OBJS=$(SRC:%.c=%.o)
