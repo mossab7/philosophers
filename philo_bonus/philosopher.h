@@ -91,5 +91,13 @@ char							*ft_itoa(int n);
 char							*ft_strjoin(char *s1, char *s2);
 void							signal_death(t_program *program);
 void							*death_listener_routine(void *arg);
+void							creat_philosophers(t_program *program);
+void							open_local_semaphores(t_philosophers *philosopher);
+void							*philosopher_routine(void *arg);
+void							creat_philosophers(t_program *program);
+size_t							ft_strlen(const char *s);
+void							ft_strcpy(char *dst, char *src);
+void							ft_strcat(char *dst, char *src);
+int								ft_atoi(const char *str);
 
 #endif

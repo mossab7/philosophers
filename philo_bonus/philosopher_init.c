@@ -43,12 +43,12 @@ t_philosophers	*philosopher_init(t_program *program)
 
 bool	construct_program(t_program *program, int ac, char **av)
 {
-	program->number_of_philosophers = atoi(av[1]);
-	program->time_to_die = atoi(av[2]);
-	program->time_to_eat = atoi(av[3]);
-	program->time_to_sleep = atoi(av[4]);
+	program->number_of_philosophers = ft_atoi(av[1]);
+	program->time_to_die = ft_atoi(av[2]);
+	program->time_to_eat = ft_atoi(av[3]);
+	program->time_to_sleep = ft_atoi(av[4]);
 	if (ac == 6)
-		program->number_of_times_each_philosopher_must_eat = atoi(av[5]);
+		program->number_of_times_each_philosopher_must_eat = ft_atoi(av[5]);
 	else
 		program->number_of_times_each_philosopher_must_eat = -1;
 	program->forks_sem = open_sem("forks_sem", O_CREAT, 0644,

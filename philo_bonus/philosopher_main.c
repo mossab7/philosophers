@@ -30,7 +30,7 @@ bool	parse_arguments(int ac, char **av)
 			}
 			j++;
 		}
-		if (atoi(av[i]) <= 0)
+		if (ft_atoi(av[i]) <= 0)
 		{
 			printf("Error:\
 			 Arguments must be positive integers greater than zero.\n");
