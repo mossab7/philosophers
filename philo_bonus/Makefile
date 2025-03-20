@@ -1,4 +1,4 @@
-CC = cc -g -O3 
+CC = cc -O3
 NAME = philo_bonus
 FLAGS = -Wall -Wextra -Werror
 SRC = philosopher.c philosopher_utils.c philosopher_launcher.c philosopher_semaphore.c philosopher_operations.c \
