@@ -12,32 +12,53 @@
 
 #include "philosopher.h"
 
+
+static size_t	ft_numlen(int n)
+{
+	long	nb;
+	int		sign;
+	size_t	len;
+
+	nb = n;
+	sign = (n < 0);
+	len = 0;
+	if (nb == 0)
+		return (1);
+	if (sign)
+		nb = -nb;
+	while (nb)
+	{
+		len++;
+		nb /= 10;
+	}
+	return (len + sign);
+}
+
 char	*ft_itoa(int n)
 {
-	int		len;
-	int		tmp;
-	char	*str;
+	size_t	len;
+	long	nb;
+	int		sign;
+	char	*number;
 
-	len = 1;
-	tmp = n;
-	while (tmp)
+	len = ft_numlen(n);
+	sign = (n < 0);
+	number = (char *)malloc((len + 1) * sizeof(char));
+	if (!number)
+		return (NULL);
+	nb = n;
+	if (sign)
 	{
-		tmp /= 10;
-		len++;
+		nb = -nb;
+		number[0] = '-';
 	}
-	str = malloc(len + 1);
-	str[len] = '\0';
-	if (n == 0)
+	number[len] = '\0';
+	while (len > (size_t)sign)
 	{
-		str[0] = '0';
-		return (str);
+		number[--len] = (nb % 10) + '0';
+		nb /= 10;
 	}
-	while (n > 0)
-	{
-		str[--len] = (n % 10) + '0';
-		n /= 10;
-	}
-	return (str);
+	return (number);
 }
 
 void	ft_strcpy(char *dst, char *src)
