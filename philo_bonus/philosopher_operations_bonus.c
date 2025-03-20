@@ -1,16 +1,16 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   philosopher_operations.c                           :+:      :+:    :+:   */
+/*   philosopher_operations_bonus.c                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: mbouhia <marvin@42.fr>                     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/18 04:55:18 by mbouhia           #+#    #+#             */
-/*   Updated: 2025/03/18 04:55:18 by mbouhia          ###   ########.fr       */
+/*   Updated: 2025/03/20 02:59:29 by mbouhia          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "philosopher.h"
+#include "philosopher_bonus.h"
 
 void	eat_sleep_think(t_philosophers *philosopher)
 {

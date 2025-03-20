@@ -1,17 +1,17 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   philosopher.h                                      :+:      :+:    :+:   */
+/*   philosopher_bonus.h                                :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: mbouhia <marvin@42.fr>                     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/18 04:56:09 by mbouhia           #+#    #+#             */
-/*   Updated: 2025/03/18 04:56:10 by mbouhia          ###   ########.fr       */
+/*   Updated: 2025/03/20 03:01:04 by mbouhia          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef PHILOSOPHER_H
-# define PHILOSOPHER_H
+#ifndef PHILOSOPHER_BONUS_H
+# define PHILOSOPHER_BONUS_H
 
 # include <fcntl.h>
 # include <pthread.h>

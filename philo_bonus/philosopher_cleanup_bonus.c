@@ -1,16 +1,16 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   philosopher_cleanup.c                              :+:      :+:    :+:   */
+/*   philosopher_cleanup_bonus.c                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: mbouhia <marvin@42.fr>                     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/18 04:55:18 by mbouhia           #+#    #+#             */
-/*   Updated: 2025/03/18 04:55:18 by mbouhia          ###   ########.fr       */
+/*   Updated: 2025/03/20 02:59:28 by mbouhia          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "philosopher.h"
+#include "philosopher_bonus.h"
 
 void	program_destroy(t_program *program)
 {
