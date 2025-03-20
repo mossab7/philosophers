@@ -38,16 +38,8 @@ t_philosophers	*philosopher_init(t_program *program)
 	return (philosopher);
 }
 
-t_program	*program_init(int ac, char **av)
+bool construct_program(t_program *program,int ac,char **av)
 {
-	t_program	*program;
-
-	program = malloc(sizeof(t_program));
-	if (!program)
-	{
-		printf("Error: Failed to allocate memory for program.\n");
-		return (NULL);
-	}
 	program->number_of_philosophers = atoi(av[1]);
 	program->time_to_die = atoi(av[2]);
 	program->time_to_eat = atoi(av[3]);
@@ -68,13 +60,18 @@ t_program	*program_init(int ac, char **av)
 			sem_close(program->death_sem);
 			cleanup_semaphores(program);
 			free(program);
-			return (NULL);
+			return (false);
 		}
 	}
 	else
 	{
 		program->philo_full_sem = NULL;
 	}
+	return (true);
+}
+
+bool construct_pids(t_program *program)
+{
 	program->pids = malloc(program->number_of_philosophers * sizeof(pid_t));
 	if (!program->pids)
 	{
@@ -85,8 +82,25 @@ t_program	*program_init(int ac, char **av)
 		if (program->philo_full_sem)
 			sem_close(program->philo_full_sem);
 		free(program);
+		return (false);
+	}
+	return (true);
+}
+
+t_program	*program_init(int ac, char **av)
+{
+	t_program	*program;
+
+	program = malloc(sizeof(t_program));
+	if (!program)
+	{
+		printf("Error: Failed to allocate memory for program.\n");
 		return (NULL);
 	}
+	if (!construct_program(program,ac,av))
+		return (NULL);
+	if (!construct_pids(program))
+		return (NULL);
 	program->philosophers = philosopher_init(program);
 	if (!program->philosophers)
 	{
