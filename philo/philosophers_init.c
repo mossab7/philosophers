@@ -40,8 +40,8 @@ void	init_philosophers(t_program *program, int count, char **args, int ac)
 
 void	program_init(int ac, char **args, t_program *program)
 {
-	int		count;
-	int		i;
+	int	count;
+	int	i;
 
 	count = ft_atoi(args[1]);
 	program->philosopher_count = count;

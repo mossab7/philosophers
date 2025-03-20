@@ -57,7 +57,6 @@ struct							s_philosophers
 	bool						simulation_stopped;
 };
 
-// Function prototypes
 bool							check_arguments(int ac, char **av);
 t_philosophers					*philosopher_init(t_program *program);
 t_program						*program_init(int ac, char **av);
@@ -68,8 +67,10 @@ void							print_status(t_philosophers *philosopher,
 									char *status);
 void							release_fork(t_philosophers *philosopher);
 void							take_fork(t_philosophers *philosopher);
-void							set_simulation_stopped(t_philosophers *philosopher);
-void							handle_single_philosopher(t_philosophers *philosopher);
+void							set_simulation_stopped(\
+								t_philosophers *philosopher);
+void							handle_single_philosopher(\
+								t_philosophers *philosopher);
 void							eat_sleep_think(t_philosophers *philosopher);
 void							*philosopher_routine(void *arg);
 bool							check_philo_death(t_philosophers *philosopher);
@@ -86,13 +87,15 @@ void							program_destroy(t_program *program);
 void							cleanup_semaphores(t_program *program);
 sem_t							*open_sem(char *name, int oflag, mode_t mode,
 									unsigned int value);
-bool							is_simulation_stopped(t_philosophers *philosopher);
+bool							is_simulation_stopped(\
+								t_philosophers *philosopher);
 char							*ft_itoa(int n);
 char							*ft_strjoin(char *s1, char *s2);
 void							signal_death(t_program *program);
 void							*death_listener_routine(void *arg);
 void							creat_philosophers(t_program *program);
-void							open_local_semaphores(t_philosophers *philosopher);
+void							open_local_semaphores(\
+								t_philosophers *philosopher);
 void							*philosopher_routine(void *arg);
 void							creat_philosophers(t_program *program);
 size_t							ft_strlen(const char *s);

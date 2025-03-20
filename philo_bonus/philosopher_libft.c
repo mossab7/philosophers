@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   philosopher_libft.c                                :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: mbouhia <marvin@42.fr>                     +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/03/20 01:28:13 by mbouhia           #+#    #+#             */
+/*   Updated: 2025/03/20 01:28:14 by mbouhia          ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "philosopher.h"
 
 char	*ft_itoa(int n)
@@ -14,8 +26,6 @@ char	*ft_itoa(int n)
 		len++;
 	}
 	str = malloc(len + 1);
-	if (!str)
-		return (NULL);
 	str[len] = '\0';
 	if (n == 0)
 	{
@@ -30,38 +40,38 @@ char	*ft_itoa(int n)
 	return (str);
 }
 
-void ft_strcpy(char *dst, char *src)
+void	ft_strcpy(char *dst, char *src)
 {
-    while (*src)
-    {
-        *dst = *src;
-        dst++;
-        src++;
-    }
-    *dst = '\0';
+	while (*src)
+	{
+		*dst = *src;
+		dst++;
+		src++;
+	}
+	*dst = '\0';
 }
 
-void ft_strcat(char *dst, char *src)
+void	ft_strcat(char *dst, char *src)
 {
-    while (*dst)
-        dst++;
-    while (*src)
-    {
-        *dst = *src;
-        dst++;
-        src++;
-    }
-    *dst = '\0';
+	while (*dst)
+		dst++;
+	while (*src)
+	{
+		*dst = *src;
+		dst++;
+		src++;
+	}
+	*dst = '\0';
 }
 
-size_t ft_strlen(const char *s)
+size_t	ft_strlen(const char *s)
 {
-    size_t len;
+	size_t	len;
 
-    len = 0;
-    while (s[len])
-        len++;
-    return (len);
+	len = 0;
+	while (s[len])
+		len++;
+	return (len);
 }
 
 char	*ft_strjoin(char *s1, char *s2)

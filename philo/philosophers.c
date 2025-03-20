@@ -26,15 +26,16 @@ void	eat_sleep_think(t_philosophers *philo)
 	philo->last_meal = get_time(philo->program);
 	print_status(philo, "is eating");
 	pthread_mutex_unlock(&philo->meal_lock);
-	ft_sleep(philo,philo->time_to_eat);
+	ft_sleep(philo, philo->time_to_eat);
 	pthread_mutex_lock(&philo->meal_lock);
 	philo->meal_count++;
 	pthread_mutex_unlock(&philo->meal_lock);
 	release_fork(philo);
 	print_status(philo, "is sleeping");
-	ft_sleep(philo,philo->time_to_sleep);
+	ft_sleep(philo, philo->time_to_sleep);
 	print_status(philo, "is thinking");
-	time_till_death = philo->time_to_die - (get_time(philo->program) - philo->last_meal);
+	time_till_death = philo->time_to_die - (get_time(philo->program)
+			- philo->last_meal);
 	ft_sleep(philo, (time_till_death * 0.7));
 }
 

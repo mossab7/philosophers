@@ -43,7 +43,7 @@ void	take_fork(t_philosophers *philosopher)
 
 void	release_fork(t_philosophers *philosopher)
 {
-	if(philosopher->forks_acquired == false)
+	if (philosopher->forks_acquired == false)
 		return ;
 	pthread_mutex_unlock(philosopher->left_fork);
 	pthread_mutex_unlock(philosopher->right_fork);

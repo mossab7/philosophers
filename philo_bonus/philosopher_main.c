@@ -33,7 +33,7 @@ bool	parse_arguments(int ac, char **av)
 		if (ft_atoi(av[i]) <= 0)
 		{
 			printf("Error:\
-			 Arguments must be positive integers greater than zero.\n");
+				Arguments must be positive integers greater than zero.\n");
 			return (false);
 		}
 		i++;
@@ -47,7 +47,7 @@ bool	check_arguments(int ac, char **av)
 	{
 		printf("Usage:\
 			%s number_of_philosophers time_to_die time_to_eat time_to_sleep\
-			 [number_of_times_each_philosopher_must_eat]\n",
+			[number_of_times_each_philosopher_must_eat]\n",
 			av[0]);
 		return (false);
 	}

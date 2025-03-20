@@ -77,10 +77,7 @@ void	creat_philosophers(t_program *program)
 			printf("Error: Failed to create child process.\n");
 			j = 0;
 			while (j < i)
-			{
-				kill(program->pids[j], SIGTERM);
-				j++;
-			}
+				kill(program->pids[j++], SIGTERM);
 			program_destroy(program);
 			exit(1);
 		}
@@ -116,8 +113,8 @@ pid_t	create_meals_monitor(t_program *program)
 
 void	program_start(t_program *program)
 {
-	pid_t meals_pid;
-	int i;
+	pid_t	meals_pid;
+	int		i;
 
 	creat_philosophers(program);
 	meals_pid = -1;

@@ -12,7 +12,6 @@
 
 #include "philosopher.h"
 
-
 long long	get_time(t_program *program)
 {
 	struct timeval	tv;

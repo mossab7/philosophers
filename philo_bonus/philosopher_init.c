@@ -12,6 +12,16 @@
 
 #include "philosopher.h"
 
+void	close_sem(t_program *program)
+{
+	sem_close(program->forks_sem);
+	sem_close(program->print_sem);
+	sem_close(program->death_sem);
+	if (program->philo_full_sem)
+		sem_close(program->philo_full_sem);
+	cleanup_semaphores(program);
+}
+
 t_philosophers	*philosopher_init(t_program *program)
 {
 	t_philosophers	*philosopher;
@@ -61,18 +71,12 @@ bool	construct_program(t_program *program, int ac, char **av)
 		if (program->philo_full_sem == SEM_FAILED)
 		{
 			printf("Error: Failed to create philo_full semaphore.\n");
-			sem_close(program->forks_sem);
-			sem_close(program->print_sem);
-			sem_close(program->death_sem);
-			cleanup_semaphores(program);
-			free(program);
-			return (false);
+			close_sem(program);
+			return (free(program), false);
 		}
 	}
 	else
-	{
 		program->philo_full_sem = NULL;
-	}
 	return (true);
 }
 
@@ -82,11 +86,7 @@ bool	construct_pids(t_program *program)
 	if (!program->pids)
 	{
 		printf("Error: Failed to allocate memory for process IDs.\n");
-		sem_close(program->forks_sem);
-		sem_close(program->print_sem);
-		sem_close(program->death_sem);
-		if (program->philo_full_sem)
-			sem_close(program->philo_full_sem);
+		close_sem(program);
 		free(program);
 		return (false);
 	}
@@ -111,11 +111,6 @@ t_program	*program_init(int ac, char **av)
 	if (!program->philosophers)
 	{
 		printf("Error: Failed to initialize philosophers.\n");
-		sem_close(program->forks_sem);
-		sem_close(program->print_sem);
-		sem_close(program->death_sem);
-		if (program->philo_full_sem)
-			sem_close(program->philo_full_sem);
 		free(program->pids);
 		free(program);
 		return (NULL);
